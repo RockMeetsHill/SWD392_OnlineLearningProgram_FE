@@ -4,7 +4,7 @@ Repository for SWD392 class SE1855 for Online Learning Program Project
 
 ## Front End Contributors 
 
-SE184894 Tran Vuong Minh Nhat
-SE183749 Tran Huu Dang Quan
+SE184894 Tran Vuong Minh Nhat \
+SE183749 Tran Huu Dang Quan \
 SE182969 Le Van Tien
 
