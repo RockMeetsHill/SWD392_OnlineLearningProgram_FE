@@ -51,45 +51,6 @@ const levels = [
     },
 ]
 
-const courses = [
-    {
-        id: 1,
-        title: 'IELTS Preparation',
-        description: 'Comprehensive strategies to achieve your target band score with expert feedback.',
-        image: 'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=400',
-        badge: 'Intensive',
-        rating: 4.9,
-        reviews: 120,
-    },
-    {
-        id: 2,
-        title: 'TOEIC Intensive',
-        description: 'Master test-taking techniques and vocabulary specifically for the TOEIC exam.',
-        image: 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=400',
-        badge: 'Intensive',
-        rating: 4.8,
-        reviews: 95,
-    },
-    {
-        id: 3,
-        title: 'Business English',
-        description: 'Professional communication skills for meetings, presentations, and emails.',
-        image: 'https://images.unsplash.com/photo-1552664730-d307ca884978?w=400',
-        badge: 'Career',
-        rating: 5.0,
-        reviews: 88,
-    },
-    {
-        id: 4,
-        title: 'English for Kids',
-        description: 'Interactive and fun lessons designed to build a strong foundation for young learners.',
-        image: 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=400',
-        badge: 'Foundation',
-        rating: 4.9,
-        reviews: 150,
-    },
-]
-
 const teachers = [
     {
         name: 'Sarah Johnson',
@@ -393,6 +354,7 @@ const Home = () => {
                                             mb={6}
                                             fontSize="2xl"
                                             boxShadow="sm"
+                                            mx="auto"
                                         >
                                             {level.icon}
                                         </Flex>
@@ -411,103 +373,6 @@ const Home = () => {
                                             <Text>View Curriculum</Text>
                                             <ArrowForwardIcon />
                                         </HStack>
-                                    </CardBody>
-                                </Card>
-                            ))}
-                        </SimpleGrid>
-                    </VStack>
-                </Container>
-            </Box>
-
-            {/* Specialized Courses Section */}
-            <Box
-                py={24}
-                bg={statsBg}
-                borderY="1px"
-                borderColor={useColorModeValue('gray.100', 'gray.800')}
-            >
-                <Container maxW="7xl" px={{ base: 4, md: 6, lg: 8 }}>
-                    <VStack spacing={16}>
-                        <VStack spacing={4} textAlign="center">
-                            <Heading color={textColor} letterSpacing="tight">
-                                Specialized Courses
-                            </Heading>
-                            <Text color={mutedColor} fontSize="lg" maxW="2xl">
-                                Targeted programs for exams and professional goals.
-                            </Text>
-                        </VStack>
-
-                        <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={8} w="full">
-                            {courses.map((course) => (
-                                <Card
-                                    key={course.id}
-                                    bg={cardBg}
-                                    borderRadius="3xl"
-                                    overflow="hidden"
-                                    boxShadow="sm"
-                                    border="1px"
-                                    borderColor={useColorModeValue('gray.100', 'gray.700')}
-                                    _hover={{
-                                        boxShadow: 'xl',
-                                        transform: 'translateY(-4px)',
-                                    }}
-                                    transition="all 0.3s"
-                                    cursor="pointer"
-                                    h="full"
-                                    onClick={() => navigate(`/courses/${course.id}`)}
-                                >
-                                    <Box position="relative" h="48" overflow="hidden">
-                                        <Image
-                                            src={course.image}
-                                            alt={course.title}
-                                            w="full"
-                                            h="full"
-                                            objectFit="cover"
-                                            transition="transform 0.5s"
-                                            _groupHover={{ transform: 'scale(1.05)' }}
-                                        />
-                                        <Badge
-                                            position="absolute"
-                                            top={4}
-                                            left={4}
-                                            bg="primary.500"
-                                            color="brand.dark"
-                                            px={3}
-                                            py={1}
-                                            borderRadius="full"
-                                            fontSize="xs"
-                                            fontWeight="bold"
-                                            textTransform="uppercase"
-                                        >
-                                            {course.badge}
-                                        </Badge>
-                                    </Box>
-                                    <CardBody p={6} display="flex" flexDirection="column">
-                                        <HStack spacing={1} mb={2}>
-                                            <StarIcon color="primary.500" boxSize={3} />
-                                            <Text fontSize="sm" fontWeight="bold" color={textColor}>
-                                                {course.rating}
-                                            </Text>
-                                            <Text fontSize="xs" color="gray.400" ml={1}>
-                                                ({course.reviews} reviews)
-                                            </Text>
-                                        </HStack>
-                                        <Heading size="md" color={textColor} mb={2}>
-                                            {course.title}
-                                        </Heading>
-                                        <Text color={mutedColor} fontSize="sm" mb={6} flex={1}>
-                                            {course.description}
-                                        </Text>
-                                        <Button
-                                            bg="primary.500"
-                                            color="brand.dark"
-                                            borderRadius="xl"
-                                            fontWeight="bold"
-                                            _hover={{ bg: 'primary.600' }}
-                                            w="full"
-                                        >
-                                            View Details
-                                        </Button>
                                     </CardBody>
                                 </Card>
                             ))}

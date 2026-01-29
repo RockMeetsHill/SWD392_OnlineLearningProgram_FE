@@ -22,7 +22,7 @@ const theme = extendTheme({
     fonts: {
         heading: `'Inter', sans-serif`,
         body: `'Inter', sans-serif`,
-        cursive: `'Pacifico', cursive`,
+        cursive: `'Dancing Script', cursive`,
     },
     styles: {
         global: (props) => ({
