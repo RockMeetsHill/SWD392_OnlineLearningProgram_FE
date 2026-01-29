@@ -24,6 +24,7 @@ import { SearchIcon, ArrowForwardIcon, StarIcon } from '@chakra-ui/icons'
 import { useNavigate } from 'react-router-dom'
 import Navbar from '../../components/Navbar'
 import Footer from '../../components/Footer'
+import { useState } from 'react'
 
 // Data
 const stats = [
@@ -80,6 +81,23 @@ const teachers = [
 
 const Home = () => {
     const navigate = useNavigate()
+    const [searchQuery, setSearchQuery] = useState('')
+
+    // Xử lý tìm kiếm
+    const handleSearch = () => {
+        if (searchQuery.trim()) {
+            navigate(`/courses?q=${encodeURIComponent(searchQuery.trim())}`)
+        } else {
+            navigate('/courses')
+        }
+    }
+
+    // Xử lý khi nhấn Enter
+    const handleKeyPress = (e) => {
+        if (e.key === 'Enter') {
+            handleSearch()
+        }
+    }
 
     // Color mode values
     const bgLight = useColorModeValue('brand.light', 'brand.dark')
@@ -178,6 +196,9 @@ const Home = () => {
                                     </InputLeftElement>
                                     <Input
                                         placeholder="What do you want to learn?"
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        onKeyDown={handleKeyPress}
                                         bg={cardBg}
                                         border="1px"
                                         borderColor={useColorModeValue('gray.200', 'gray.700')}
@@ -202,6 +223,7 @@ const Home = () => {
                                             size="md"
                                             _hover={{ bg: 'primary.600' }}
                                             aria-label="Search"
+                                            onClick={handleSearch}
                                         />
                                     </InputRightElement>
                                 </InputGroup>
