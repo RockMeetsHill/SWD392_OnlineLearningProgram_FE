@@ -24,6 +24,7 @@ import { SearchIcon, ArrowForwardIcon, StarIcon } from '@chakra-ui/icons'
 import { useNavigate } from 'react-router-dom'
 import Navbar from '../../components/Navbar'
 import Footer from '../../components/Footer'
+import { useState } from 'react'
 
 // Data
 const stats = [
@@ -119,6 +120,23 @@ const teachers = [
 
 const Home = () => {
     const navigate = useNavigate()
+    const [searchQuery, setSearchQuery] = useState('')
+
+    // Xử lý tìm kiếm
+    const handleSearch = () => {
+        if (searchQuery.trim()) {
+            navigate(`/courses?q=${encodeURIComponent(searchQuery.trim())}`)
+        } else {
+            navigate('/courses')
+        }
+    }
+
+    // Xử lý khi nhấn Enter
+    const handleKeyPress = (e) => {
+        if (e.key === 'Enter') {
+            handleSearch()
+        }
+    }
 
     // Color mode values
     const bgLight = useColorModeValue('brand.light', 'brand.dark')
@@ -217,6 +235,9 @@ const Home = () => {
                                     </InputLeftElement>
                                     <Input
                                         placeholder="What do you want to learn?"
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        onKeyDown={handleKeyPress}
                                         bg={cardBg}
                                         border="1px"
                                         borderColor={useColorModeValue('gray.200', 'gray.700')}
@@ -241,6 +262,7 @@ const Home = () => {
                                             size="md"
                                             _hover={{ bg: 'primary.600' }}
                                             aria-label="Search"
+                                            onClick={handleSearch}
                                         />
                                     </InputRightElement>
                                 </InputGroup>
@@ -411,103 +433,6 @@ const Home = () => {
                                             <Text>View Curriculum</Text>
                                             <ArrowForwardIcon />
                                         </HStack>
-                                    </CardBody>
-                                </Card>
-                            ))}
-                        </SimpleGrid>
-                    </VStack>
-                </Container>
-            </Box>
-
-            {/* Specialized Courses Section */}
-            <Box
-                py={24}
-                bg={statsBg}
-                borderY="1px"
-                borderColor={useColorModeValue('gray.100', 'gray.800')}
-            >
-                <Container maxW="7xl" px={{ base: 4, md: 6, lg: 8 }}>
-                    <VStack spacing={16}>
-                        <VStack spacing={4} textAlign="center">
-                            <Heading color={textColor} letterSpacing="tight">
-                                Specialized Courses
-                            </Heading>
-                            <Text color={mutedColor} fontSize="lg" maxW="2xl">
-                                Targeted programs for exams and professional goals.
-                            </Text>
-                        </VStack>
-
-                        <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={8} w="full">
-                            {courses.map((course) => (
-                                <Card
-                                    key={course.id}
-                                    bg={cardBg}
-                                    borderRadius="3xl"
-                                    overflow="hidden"
-                                    boxShadow="sm"
-                                    border="1px"
-                                    borderColor={useColorModeValue('gray.100', 'gray.700')}
-                                    _hover={{
-                                        boxShadow: 'xl',
-                                        transform: 'translateY(-4px)',
-                                    }}
-                                    transition="all 0.3s"
-                                    cursor="pointer"
-                                    h="full"
-                                    onClick={() => navigate(`/courses/${course.id}`)}
-                                >
-                                    <Box position="relative" h="48" overflow="hidden">
-                                        <Image
-                                            src={course.image}
-                                            alt={course.title}
-                                            w="full"
-                                            h="full"
-                                            objectFit="cover"
-                                            transition="transform 0.5s"
-                                            _groupHover={{ transform: 'scale(1.05)' }}
-                                        />
-                                        <Badge
-                                            position="absolute"
-                                            top={4}
-                                            left={4}
-                                            bg="primary.500"
-                                            color="brand.dark"
-                                            px={3}
-                                            py={1}
-                                            borderRadius="full"
-                                            fontSize="xs"
-                                            fontWeight="bold"
-                                            textTransform="uppercase"
-                                        >
-                                            {course.badge}
-                                        </Badge>
-                                    </Box>
-                                    <CardBody p={6} display="flex" flexDirection="column">
-                                        <HStack spacing={1} mb={2}>
-                                            <StarIcon color="primary.500" boxSize={3} />
-                                            <Text fontSize="sm" fontWeight="bold" color={textColor}>
-                                                {course.rating}
-                                            </Text>
-                                            <Text fontSize="xs" color="gray.400" ml={1}>
-                                                ({course.reviews} reviews)
-                                            </Text>
-                                        </HStack>
-                                        <Heading size="md" color={textColor} mb={2}>
-                                            {course.title}
-                                        </Heading>
-                                        <Text color={mutedColor} fontSize="sm" mb={6} flex={1}>
-                                            {course.description}
-                                        </Text>
-                                        <Button
-                                            bg="primary.500"
-                                            color="brand.dark"
-                                            borderRadius="xl"
-                                            fontWeight="bold"
-                                            _hover={{ bg: 'primary.600' }}
-                                            w="full"
-                                        >
-                                            View Details
-                                        </Button>
                                     </CardBody>
                                 </Card>
                             ))}
