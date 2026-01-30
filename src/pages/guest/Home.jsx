@@ -52,45 +52,6 @@ const levels = [
     },
 ]
 
-const courses = [
-    {
-        id: 1,
-        title: 'IELTS Preparation',
-        description: 'Comprehensive strategies to achieve your target band score with expert feedback.',
-        image: 'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=400',
-        badge: 'Intensive',
-        rating: 4.9,
-        reviews: 120,
-    },
-    {
-        id: 2,
-        title: 'TOEIC Intensive',
-        description: 'Master test-taking techniques and vocabulary specifically for the TOEIC exam.',
-        image: 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=400',
-        badge: 'Intensive',
-        rating: 4.8,
-        reviews: 95,
-    },
-    {
-        id: 3,
-        title: 'Business English',
-        description: 'Professional communication skills for meetings, presentations, and emails.',
-        image: 'https://images.unsplash.com/photo-1552664730-d307ca884978?w=400',
-        badge: 'Career',
-        rating: 5.0,
-        reviews: 88,
-    },
-    {
-        id: 4,
-        title: 'English for Kids',
-        description: 'Interactive and fun lessons designed to build a strong foundation for young learners.',
-        image: 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=400',
-        badge: 'Foundation',
-        rating: 4.9,
-        reviews: 150,
-    },
-]
-
 const teachers = [
     {
         name: 'Sarah Johnson',
@@ -415,6 +376,7 @@ const Home = () => {
                                             mb={6}
                                             fontSize="2xl"
                                             boxShadow="sm"
+                                            mx="auto"
                                         >
                                             {level.icon}
                                         </Flex>
