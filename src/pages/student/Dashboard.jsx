@@ -22,6 +22,7 @@ import { ChevronRightIcon, DownloadIcon } from '@chakra-ui/icons'
 // import { useNavigate } from 'react-router-dom'
 import Sidebar from '../../components/student/StudentSidebar'
 import StudentNavbar from '../../components/student/StudentNavbar'
+import { useAuth } from '../../context/AuthContext'
 
 const Dashboard = () => {
     // const navigate = useNavigate()
@@ -32,6 +33,8 @@ const Dashboard = () => {
     // const borderColor = useColorModeValue('gray.200', 'gray.700')
     const textColor = useColorModeValue('brand.dark', 'white')
     const mutedColor = useColorModeValue('gray.600', 'gray.400')
+
+    const { user } = useAuth()
 
     // Mock data
     const currentLesson = {
@@ -120,7 +123,7 @@ const Dashboard = () => {
                                 {/* Welcome Section */}
                                 <Box>
                                     <Heading size="lg" color={textColor} mb={1}>
-                                        Welcome back, Alex! 👋
+                                        Welcome back, {user?.fullName || 'Student'}! 👋
                                     </Heading>
                                     <Text color={mutedColor}>
                                         Ready for your IELTS prep today? You're doing great!

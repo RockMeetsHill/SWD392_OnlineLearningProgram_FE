@@ -125,6 +125,8 @@ const Login = () => {
       navigate("/admin/dashboard");
     } else if (roles.includes("instructor")) {
       navigate("/instructor/dashboard");
+    } else if (roles.includes("student")) {
+      navigate("/student/dashboard");
     } else {
       navigate("/");
     }
