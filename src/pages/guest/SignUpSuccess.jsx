@@ -86,6 +86,8 @@ const SignUpSuccess = () => {
                   rightIcon={<ArrowForwardIcon />}
                   _hover={{ bg: "primary.600" }}
                   boxShadow="md"
+                  as={Link}
+                  to="/student/dashboard"
                 >
                   Go to Dashboard
                 </Button>

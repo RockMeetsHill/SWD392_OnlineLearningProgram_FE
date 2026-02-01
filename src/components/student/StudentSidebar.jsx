@@ -43,18 +43,6 @@ const Sidebar = () => {
       ),
       path: "/student/courses",
     },
-    {
-      name: "Accomplishments",
-      icon: (
-        <Icon viewBox="0 0 24 24" boxSize={5}>
-          <path
-            fill="currentColor"
-            d="M5,16L3,5L8.5,10L12,4L15.5,10L21,5L19,16H5M19,19A1,1 0 0,1 18,20H6A1,1 0 0,1 5,19V18H19V19Z"
-          />
-        </Icon>
-      ),
-      path: "/student/accomplishments",
-    },
   ];
 
   return (
