@@ -17,13 +17,13 @@ import {
 import { ViewIcon, ViewOffIcon } from "@chakra-ui/icons";
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { useAuth } from "../../context/AuthContext";
 import GoogleLogo from "../../assets/login_icons/google_logo_icon.png";
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
 const Signup = () => {
   const navigate = useNavigate();
   const toast = useToast();
+  const { register, login } = useAuth();
 
   const [formData, setFormData] = useState({
     name: "",
@@ -89,24 +89,11 @@ const Signup = () => {
     setIsLoading(true);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/register`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify({
-          email: formData.email,
-          password: formData.password,
-          name: formData.name.trim(),
-        }),
-      });
+      // Step 1: Register the user
+      await register(formData.name.trim(), formData.email, formData.password);
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Registration failed");
-      }
+      // Step 2: Auto login after successful registration
+      await login(formData.email, formData.password);
 
       toast({
         title: "Success",
@@ -116,8 +103,10 @@ const Signup = () => {
         isClosable: true,
       });
 
+      // Step 3: Redirect to success page (user is now logged in)
       navigate("/register/success");
     } catch (error) {
+      console.error("Registration/Login error:", error);
       toast({
         title: "Error",
         description: error.message || "Something went wrong",
@@ -202,7 +191,9 @@ const Signup = () => {
               <VStack align="stretch" spacing={6}>
                 <VStack align={{ base: "center", sm: "start" }} spacing={1}>
                   <Heading size="lg">Create your account</Heading>
-                  <Text color={textMuted}>Start your learning journey today</Text>
+                  <Text color={textMuted}>
+                    Start your learning journey today
+                  </Text>
                 </VStack>
 
                 <Stack spacing={5}>
@@ -225,7 +216,12 @@ const Signup = () => {
                   </Box>
 
                   <Box>
-                    <Text fontSize="sm" fontWeight="semibold" mb={2} align="left">
+                    <Text
+                      fontSize="sm"
+                      fontWeight="semibold"
+                      mb={2}
+                      align="left"
+                    >
                       Email
                     </Text>
                     <Input
@@ -239,7 +235,12 @@ const Signup = () => {
                   </Box>
 
                   <Box>
-                    <Text fontSize="sm" fontWeight="semibold" mb={2} align="left">
+                    <Text
+                      fontSize="sm"
+                      fontWeight="semibold"
+                      mb={2}
+                      align="left"
+                    >
                       Password
                     </Text>
                     <Flex align="center" position="relative">
@@ -253,7 +254,9 @@ const Signup = () => {
                         pr={12}
                       />
                       <IconButton
-                        aria-label={showPassword ? "Hide password" : "Show password"}
+                        aria-label={
+                          showPassword ? "Hide password" : "Show password"
+                        }
                         icon={showPassword ? <ViewOffIcon /> : <ViewIcon />}
                         variant="ghost"
                         position="absolute"
