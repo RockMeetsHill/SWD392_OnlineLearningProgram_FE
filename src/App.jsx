@@ -6,6 +6,8 @@ import Signup from './pages/guest/Signup'
 import CourseSearch from './pages/guest/CourseSearch'
 import CourseDetail from './pages/guest/CourseDetail'
 import SignUpSuccess from './pages/guest/SignUpSuccess'
+import PaymentSuccess from './pages/student/PaymentSuccess'
+import StudentDashboard from './pages/student/Dashboard'
 import InstructorDashboard from './pages/instructor/Dashboard'
 
 function App() {
@@ -18,6 +20,8 @@ function App() {
       <Route path="/courses" element={<CourseSearch />} />
       <Route path="/courses/:id" element={<CourseDetail />} />
       <Route path="/register/success" element={<SignUpSuccess />} />
+      <Route path="/student/payment/success" element={<PaymentSuccess />} />
+      <Route path="/student/dashboard" element={<StudentDashboard />} />
 
       <Route path="/instructor/dashboard" element={<InstructorDashboard />} />
       <Route path="/instructor" element={<InstructorDashboard />} />
