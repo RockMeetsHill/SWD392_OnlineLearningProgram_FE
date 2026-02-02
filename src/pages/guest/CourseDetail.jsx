@@ -618,7 +618,7 @@ const CourseDetail = () => {
                     >
                       {course.price === 0 || course.price === "0"
                         ? "Free"
-                        : `${course.price} VNĐ`}
+                        : `${Number(course.price).toLocaleString("vi-VN")} VNĐ`}
                     </Text>
                     {course.originalPrice &&
                       course.originalPrice > course.price && (
@@ -628,7 +628,7 @@ const CourseDetail = () => {
                             color="gray.400"
                             textDecoration="line-through"
                           >
-                            {course.originalPrice} VNĐ
+                            {Number(course.originalPrice).toLocaleString("vi-VN")} VNĐ
                           </Text>
                           <Badge
                             bg="primary.500"

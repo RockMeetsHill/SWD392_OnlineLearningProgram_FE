@@ -187,17 +187,6 @@ const Navbar = () => {
                                 Courses
                             </Text>
                         </Link>
-                        <Link to="/categories">
-                            <Text
-                                color={textColor}
-                                fontWeight="bold"
-                                fontSize="lg"
-                                _hover={{ color: "primary.500" }}
-                                transition="color 0.2s"
-                            >
-                                Categories
-                            </Text>
-                        </Link>
                         <Link to="/about">
                             <Text
                                 color={textColor}
