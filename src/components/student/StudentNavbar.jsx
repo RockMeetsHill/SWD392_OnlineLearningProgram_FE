@@ -1,68 +1,69 @@
 import {
-    Box,
-    Flex,
-    HStack,
-    VStack,
-    Text,
-    InputGroup,
-    InputLeftElement,
-    Input,
-    IconButton,
-    Avatar,
-    useColorModeValue,
-    Menu,
-    MenuButton,
-    MenuList,
-    MenuItem,
-    MenuDivider,
-    Button,
-    Badge,
-    Popover,
-    PopoverTrigger,
-    PopoverContent,
-    PopoverHeader,
-    PopoverBody,
-    PopoverArrow,
-    Icon,
-} from '@chakra-ui/react'
-import { 
-    SearchIcon, 
-    BellIcon, 
-    ChevronDownIcon,
-    SettingsIcon,
-} from '@chakra-ui/icons'
-import { useAuth } from '../../context/AuthContext'
-import { useNavigate } from 'react-router-dom'
+  Box,
+  Flex,
+  HStack,
+  VStack,
+  Text,
+  InputGroup,
+  InputLeftElement,
+  Input,
+  IconButton,
+  Avatar,
+  useColorModeValue,
+  Menu,
+  MenuButton,
+  MenuList,
+  MenuItem,
+  MenuDivider,
+  Button,
+  Badge,
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+  PopoverHeader,
+  PopoverBody,
+  PopoverArrow,
+  Icon,
+} from "@chakra-ui/react";
+import {
+  SearchIcon,
+  BellIcon,
+  ChevronDownIcon,
+  SettingsIcon,
+} from "@chakra-ui/icons";
+import { useState } from "react";
+import { useAuth } from "../../context/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 // Custom User Icon
 const UserIcon = (props) => (
-    <Icon viewBox="0 0 24 24" {...props}>
-        <path
-            fill="currentColor"
-            d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"
-        />
-    </Icon>
-)
+  <Icon viewBox="0 0 24 24" {...props}>
+    <path
+      fill="currentColor"
+      d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"
+    />
+  </Icon>
+);
 
 // Custom Logout Icon
 const LogoutIcon = (props) => (
-    <Icon viewBox="0 0 24 24" {...props}>
-        <path
-            fill="currentColor"
-            d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"
-        />
-    </Icon>
-)
+  <Icon viewBox="0 0 24 24" {...props}>
+    <path
+      fill="currentColor"
+      d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"
+    />
+  </Icon>
+);
 
 // Custom Dashboard Icon
 const DashboardIcon = (props) => (
-    <Icon viewBox="0 0 24 24" {...props}>
-        <path
-            fill="currentColor"
-            d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"
-        />
-    </Icon>
-)
+  <Icon viewBox="0 0 24 24" {...props}>
+    <path
+      fill="currentColor"
+      d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"
+    />
+  </Icon>
+);
 
 const StudentNavbar = () => {
     const bgColor = useColorModeValue(
@@ -80,51 +81,63 @@ const StudentNavbar = () => {
     const { user, logout } = useAuth()
     const navigate = useNavigate()
 
-    // Mock notifications - replace with real data later
-    const notifications = [
-        { id: 1, message: 'New course available!', isRead: false },
-        { id: 2, message: 'Your certificate is ready', isRead: false },
-        { id: 3, message: 'Welcome to BeeEnglish!', isRead: true },
-    ]
+  const [searchQuery, setSearchQuery] = useState("");
 
-    const unreadCount = notifications.filter((n) => !n.isRead).length
+  // Mock notifications - replace with real data later
+  const notifications = [
+    { id: 1, message: "New course available!", isRead: false },
+    { id: 2, message: "Your certificate is ready", isRead: false },
+    { id: 3, message: "Welcome to BeeEnglish!", isRead: true },
+  ];
 
-    const handleLogout = async () => {
-        await logout()
-        navigate('/')
+  const unreadCount = notifications.filter((n) => !n.isRead).length;
+
+  const handleLogout = async () => {
+    await logout();
+    navigate("/");
+  };
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/courses?q=${encodeURIComponent(searchQuery.trim())}`);
     }
+  };
 
-    return (
-        <Box
-            bg={bgColor}
-            borderBottom="1px"
-            borderColor={borderColor}
-            px={{ base: 4, md: 8 }}
-            py={4}
-            position="sticky"
-            top={0}
-            zIndex={10}
-            backdropFilter="blur(12px)"
-        >
-            <Flex justify="space-between" align="center" gap={{ base: 4, md: 6 }}>
-                {/* Search Bar */}
-                <InputGroup maxW={{ base: '100%', md: '500px' }}>
-                    <InputLeftElement pointerEvents="none" pl={4}>
-                        <SearchIcon color="gray.400" />
-                    </InputLeftElement>
-                    <Input
-                        placeholder="Search for lessons, quizzes, resources..."
-                        bg={useColorModeValue('gray.50', 'gray.700')}
-                        border="1px"
-                        borderColor={useColorModeValue('gray.200', 'gray.600')}
-                        rounded="lg"
-                        pl={12}
-                        _focus={{
-                            borderColor: 'primary.500',
-                            boxShadow: '0 0 0 1px var(--chakra-colors-primary-500)',
-                        }}
-                    />
-                </InputGroup>
+  const handleSearchKeyPress = (e) => {
+    if (e.key === "Enter") {
+      handleSearch(e);
+    }
+  };
+
+  return (
+    <Box
+      bg={bgColor}
+      borderBottom="1px"
+      borderColor={borderColor}
+      px={8}
+      py={4}
+      position="sticky"
+      top={0}
+      zIndex={10}
+      backdropFilter="blur(12px)"
+    >
+      <Flex justify="space-between" align="center">
+        {/* Search Bar */}
+        <InputGroup maxW="500px">
+          <InputLeftElement pointerEvents="none">
+            <SearchIcon color="gray.400" />
+          </InputLeftElement>
+          <Input
+            placeholder="Search for lessons, quizzes, resources..."
+            bg={useColorModeValue("gray.50", "gray.700")}
+            border="none"
+            rounded="lg"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyPress={handleSearchKeyPress}
+          />
+        </InputGroup>
 
                 {/* User Actions */}
                 <HStack spacing={2} flexShrink={0}>
@@ -199,73 +212,73 @@ const StudentNavbar = () => {
                         </PopoverContent>
                     </Popover>
 
-                    {/* User Menu */}
-                    <Menu>
-                        <MenuButton
-                            as={Button}
-                            variant="ghost"
-                            borderRadius="full"
-                            px={2}
-                            _hover={{ bg: hoverBg }}
-                        >
-                            <HStack spacing={2}>
-                                <Avatar
-                                    size="sm"
-                                    name={user?.fullName}
-                                    bg="primary.500"
-                                    color="brand.dark"
-                                />
-                                <Text
-                                    display={{ base: 'none', lg: 'block' }}
-                                    fontWeight="medium"
-                                    maxW="120px"
-                                    isTruncated
-                                >
-                                    {user?.fullName}
-                                </Text>
-                                <ChevronDownIcon />
-                            </HStack>
-                        </MenuButton>
-                        <MenuList bg={menuBg}>
-                            <Box px={4} py={2}>
-                                <Text fontWeight="bold">{user?.fullName}</Text>
-                                <Text fontSize="sm" color="gray.500">
-                                    {user?.email}
-                                </Text>
-                            </Box>
-                            <MenuDivider />
-                            <MenuItem
-                                icon={<DashboardIcon boxSize={4} />}
-                                onClick={() => navigate('/student/dashboard')}
-                            >
-                                Dashboard
-                            </MenuItem>
-                            <MenuItem
-                                icon={<UserIcon boxSize={4} />}
-                                onClick={() => navigate('/profile')}
-                            >
-                                My Profile
-                            </MenuItem>
-                            <MenuItem
-                                icon={<SettingsIcon boxSize={4} />}
-                                onClick={() => navigate('/settings')}
-                            >
-                                Settings
-                            </MenuItem>
-                            <MenuDivider />
-                            <MenuItem
-                                icon={<LogoutIcon boxSize={4} />}
-                                onClick={handleLogout}
-                                color="red.500"
-                            >
-                                Sign Out
-                            </MenuItem>
-                        </MenuList>
-                    </Menu>
-                </HStack>
-            </Flex>
-        </Box>
-    )
-}
+          {/* User Menu */}
+          <Menu>
+            <MenuButton
+              as={Button}
+              variant="ghost"
+              borderRadius="full"
+              px={2}
+              _hover={{ bg: hoverBg }}
+            >
+              <HStack spacing={2}>
+                <Avatar
+                  size="sm"
+                  name={user?.fullName}
+                  bg="primary.500"
+                  color="brand.dark"
+                />
+                <Text
+                  display={{ base: "none", lg: "block" }}
+                  fontWeight="medium"
+                  maxW="120px"
+                  isTruncated
+                >
+                  {user?.fullName}
+                </Text>
+                <ChevronDownIcon />
+              </HStack>
+            </MenuButton>
+            <MenuList bg={menuBg}>
+              <Box px={4} py={2}>
+                <Text fontWeight="bold">{user?.fullName}</Text>
+                <Text fontSize="sm" color="gray.500">
+                  {user?.email}
+                </Text>
+              </Box>
+              <MenuDivider />
+              <MenuItem
+                icon={<DashboardIcon boxSize={4} />}
+                onClick={() => navigate("/student/dashboard")}
+              >
+                Dashboard
+              </MenuItem>
+              <MenuItem
+                icon={<UserIcon boxSize={4} />}
+                onClick={() => navigate("/profile")}
+              >
+                My Profile
+              </MenuItem>
+              <MenuItem
+                icon={<SettingsIcon boxSize={4} />}
+                onClick={() => navigate("/settings")}
+              >
+                Settings
+              </MenuItem>
+              <MenuDivider />
+              <MenuItem
+                icon={<LogoutIcon boxSize={4} />}
+                onClick={handleLogout}
+                color="red.500"
+              >
+                Sign Out
+              </MenuItem>
+            </MenuList>
+          </Menu>
+        </HStack>
+      </Flex>
+    </Box>
+  );
+};
 
-export default StudentNavbar
+export default StudentNavbar;
