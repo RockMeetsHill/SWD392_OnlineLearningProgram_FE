@@ -61,7 +61,7 @@ const Sidebar = () => {
     >
       <VStack spacing={6} align="stretch" px={4}>
         {/* Logo */}
-        <Link to="/student/dashboard">
+        <Link to="/">
           <HStack spacing={2} px={2} cursor="pointer">
             <Text
               fontSize="2xl"

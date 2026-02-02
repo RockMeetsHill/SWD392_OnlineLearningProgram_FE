@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Box,
   Container,
@@ -233,7 +233,7 @@ const CourseCard = ({ course, onClick, onAddToCart }) => {
             <Text fontSize="xl" fontWeight="bold" color={textColor}>
               {course.price === 0 || course.isFree
                 ? "Free"
-                : `${course.price.toLocaleString('vi-VN')} VNĐ`}
+                : `${Number(course.price).toLocaleString("vi-VN")} VNĐ`}
             </Text>
             {course.originalPrice && course.originalPrice > course.price && (
               <Text
@@ -241,7 +241,7 @@ const CourseCard = ({ course, onClick, onAddToCart }) => {
                 color="gray.400"
                 textDecoration="line-through"
               >
-                {course.originalPrice}VNĐ
+                {Number(course.originalPrice).toLocaleString("vi-VN")} VNĐ
               </Text>
             )}
           </VStack>
@@ -509,7 +509,7 @@ const CourseSearch = () => {
   const borderColor = useColorModeValue("gray.200", "gray.700");
 
   // Fetch courses from API
-  const fetchCourses = async () => {
+  const fetchCourses = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
@@ -518,22 +518,50 @@ const CourseSearch = () => {
         level: filters.levels.length > 0 ? filters.levels : undefined,
         price: filters.price.length > 0 ? filters.price : undefined,
         page: currentPage,
-        limit: 9, // 9 courses per page (3x3 grid)
+        limit: 9,
       };
 
       const response = await courseAPI.getCourses(apiFilters);
 
-      // Adjust based on your actual API response structure
-      if (response.courses) {
+      // Backend trả về array trực tiếp (không có pagination từ backend)
+      if (Array.isArray(response)) {
+        // Nếu backend trả về tất cả courses, ta phải tự xử lý pagination ở frontend
+        const allCourses = response;
+
+        // Tự filter theo search query (case-insensitive)
+        let filteredCourses = allCourses;
+        if (searchQuery.trim()) {
+          filteredCourses = allCourses.filter((course) =>
+            course.title.toLowerCase().includes(searchQuery.toLowerCase()),
+          );
+        }
+
+        // Tự filter theo level
+        if (filters.levels.length > 0) {
+          filteredCourses = filteredCourses.filter((course) =>
+            filters.levels.includes(course.levelTarget),
+          );
+        }
+
+        // Tính pagination ở frontend
+        const total = filteredCourses.length;
+        const totalPagesCalculated = Math.ceil(total / 9);
+        const startIndex = (currentPage - 1) * 9;
+        const endIndex = startIndex + 9;
+        const paginatedCourses = filteredCourses.slice(startIndex, endIndex);
+
+        setCourses(paginatedCourses);
+        setTotalCourses(total);
+        setTotalPages(totalPagesCalculated);
+      }
+      // Backend trả về object với pagination
+      else if (response.courses) {
         setCourses(response.courses);
         setTotalPages(response.totalPages || 1);
         setTotalCourses(response.total || response.courses.length);
-      } else if (Array.isArray(response)) {
-        // If API returns array directly
-        setCourses(response);
-        setTotalCourses(response.length);
-        setTotalPages(1);
-      } else {
+      }
+      // Fallback
+      else {
         setCourses([]);
         setTotalCourses(0);
         setTotalPages(1);
@@ -552,36 +580,50 @@ const CourseSearch = () => {
     } finally {
       setIsLoading(false);
     }
+  }, [searchQuery, filters, currentPage, toast]);
+
+  const handleSearchKeyPress = (e) => {
+    if (e.key === "Enter") {
+      // Trigger search ngay lập tức khi nhấn Enter
+      if (searchQuery.trim()) {
+        setSearchParams({ q: searchQuery.trim() });
+        setCurrentPage(1);
+        fetchCourses();
+      }
+    }
   };
 
-  // Fetch courses on component mount and when filters/page change
+  // Debounce search query - tự động tìm kiếm sau 500ms khi người dùng ngừng gõ
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      fetchCourses();
+      // Update URL params
+      if (searchQuery.trim()) {
+        setSearchParams({ q: searchQuery });
+      } else {
+        setSearchParams({});
+      }
+    }, 500); // Đợi 500ms sau khi người dùng ngừng gõ
+
+    return () => clearTimeout(timeoutId);
+  }, [fetchCourses, searchQuery, setSearchParams]); // Chỉ trigger khi searchQuery thay đổi
+
+  // Fetch courses when filters or page change
   useEffect(() => {
     fetchCourses();
-  }, [currentPage]);
+  }, [filters, currentPage, fetchCourses]);
 
-  // Update search query from URL params
+  // Update search query from URL params on mount
   useEffect(() => {
     const queryParam = searchParams.get("q");
-    if (queryParam !== searchQuery) {
-      setSearchQuery(queryParam || "");
+    if (queryParam) {
+      setSearchQuery(queryParam);
     }
   }, [searchParams]);
 
-  const handleSearch = () => {
-    if (searchQuery.trim()) {
-      setSearchParams({ q: searchQuery });
-    } else {
-      setSearchParams({});
-    }
-    setCurrentPage(1);
-    fetchCourses();
-  };
-
   const clearSearch = () => {
-    setSearchQuery("");
+    setSearchQuery(""); // Khi xóa, searchQuery = "" sẽ trigger useEffect và tự động fetch lại
     setSearchParams({});
-    setCurrentPage(1);
-    setTimeout(() => fetchCourses(), 0);
   };
 
   const handleApplyFilters = () => {
@@ -636,7 +678,7 @@ const CourseSearch = () => {
                 placeholder="What do you want to learn?"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                onKeyPress={handleSearchKeyPress}
                 bg={inputBg}
                 border="none"
                 pl={14}
@@ -659,21 +701,6 @@ const CourseSearch = () => {
                 </InputRightElement>
               )}
             </InputGroup>
-            <Button
-              px={10}
-              h="auto"
-              bg="primary.500"
-              color="gray.900"
-              fontWeight="bold"
-              fontSize="lg"
-              borderRadius="none"
-              borderLeft="1px"
-              borderColor={borderColor}
-              _hover={{ bg: "primary.400" }}
-              onClick={handleSearch}
-            >
-              Search
-            </Button>
           </Flex>
         </Box>
 
@@ -720,9 +747,9 @@ const CourseSearch = () => {
                 <SimpleGrid columns={{ base: 1, md: 2, xl: 3 }} spacing={8}>
                   {courses.map((course) => (
                     <CourseCard
-                      key={course.courseId} // SỬA: từ course._id thành course.courseId
+                      key={course.courseId}
                       course={course}
-                      onClick={() => handleCourseClick(course.courseId)} // SỬA
+                      onClick={() => handleCourseClick(course.courseId)}
                       onAddToCart={handleAddToCart}
                     />
                   ))}
