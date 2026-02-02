@@ -65,12 +65,15 @@ const DashboardIcon = (props) => (
 )
 
 const StudentNavbar = () => {
-    const bgColor = useColorModeValue('white', 'gray.800')
-    const borderColor = useColorModeValue('gray.200', 'gray.700')
+    const bgColor = useColorModeValue(
+        'rgba(255, 253, 245, 0.9)',
+        'rgba(10, 25, 38, 0.9)'
+    )
+    const borderColor = useColorModeValue('gray.100', 'gray.800')
     const textColor = useColorModeValue('brand.dark', 'white')
     const mutedColor = useColorModeValue('gray.600', 'gray.400')
     const menuBg = useColorModeValue('white', 'gray.800')
-    const hoverBg = useColorModeValue('gray.100', 'gray.700')
+    const hoverBg = useColorModeValue('gray.50', 'gray.700')
     const unreadBg = useColorModeValue('yellow.50', 'gray.700')
     const hoverItemBg = useColorModeValue('gray.50', 'gray.600')
     
@@ -96,29 +99,35 @@ const StudentNavbar = () => {
             bg={bgColor}
             borderBottom="1px"
             borderColor={borderColor}
-            px={8}
+            px={{ base: 4, md: 8 }}
             py={4}
             position="sticky"
             top={0}
             zIndex={10}
             backdropFilter="blur(12px)"
         >
-            <Flex justify="space-between" align="center">
+            <Flex justify="space-between" align="center" gap={{ base: 4, md: 6 }}>
                 {/* Search Bar */}
-                <InputGroup maxW="500px">
-                    <InputLeftElement pointerEvents="none">
+                <InputGroup maxW={{ base: '100%', md: '500px' }}>
+                    <InputLeftElement pointerEvents="none" pl={4}>
                         <SearchIcon color="gray.400" />
                     </InputLeftElement>
                     <Input
                         placeholder="Search for lessons, quizzes, resources..."
                         bg={useColorModeValue('gray.50', 'gray.700')}
-                        border="none"
+                        border="1px"
+                        borderColor={useColorModeValue('gray.200', 'gray.600')}
                         rounded="lg"
+                        pl={12}
+                        _focus={{
+                            borderColor: 'primary.500',
+                            boxShadow: '0 0 0 1px var(--chakra-colors-primary-500)',
+                        }}
                     />
                 </InputGroup>
 
                 {/* User Actions */}
-                <HStack spacing={3}>
+                <HStack spacing={2} flexShrink={0}>
                     {/* Notifications */}
                     <Popover placement="bottom-end">
                         <PopoverTrigger>

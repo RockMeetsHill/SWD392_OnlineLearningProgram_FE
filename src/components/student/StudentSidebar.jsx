@@ -7,10 +7,15 @@ import {
   Flex,
   useColorModeValue,
   Divider,
+  IconButton,
+  Tooltip,
 } from "@chakra-ui/react";
 import { Link, useLocation } from "react-router-dom";
+import { ChevronLeftIcon, ChevronRightIcon } from "@chakra-ui/icons";
+import { useState } from "react";
 
 const Sidebar = () => {
+  const [isCollapsed, setIsCollapsed] = useState(true);
   const location = useLocation();
   const bgColor = useColorModeValue("white", "gray.800");
   const borderColor = useColorModeValue("gray.200", "gray.700");
@@ -47,7 +52,7 @@ const Sidebar = () => {
 
   return (
     <Box
-      w="240px"
+      w={isCollapsed ? "80px" : "240px"}
       h="100vh"
       bg={bgColor}
       borderRight="1px"
@@ -58,21 +63,46 @@ const Sidebar = () => {
       left={0}
       overflowY="auto"
       overflowX="auto"
+      transition="all 0.3s ease"
     >
       <VStack spacing={6} align="stretch" px={4}>
-        {/* Logo */}
-        <Link to="/student/dashboard">
-          <HStack spacing={2} px={2} cursor="pointer">
-            <Text
-              fontSize="2xl"
-              fontFamily="'Pacifico', cursive"
-              color={logoColor}
-            >
-              BeeEnglish
-            </Text>
-            <Text fontSize="2xl">🐝</Text>
-          </HStack>
-        </Link>
+        {/* Header with Logo and Toggle Button */}
+        <Flex justify="space-between" align="center">
+          {!isCollapsed && (
+            <Link to="/">
+              <HStack spacing={2} px={2} cursor="pointer">
+                <Text
+                  fontSize="2xl"
+                  fontFamily="'Pacifico', cursive"
+                  color={logoColor}
+                >
+                  BeeEnglish
+                </Text>
+                <Text fontSize="2xl">🐝</Text>
+              </HStack>
+            </Link>
+          )}
+          <Tooltip
+            label={isCollapsed ? "Expand" : "Collapse"}
+            placement="right"
+            openDelay={500}
+          >
+            <IconButton
+              icon={
+                isCollapsed ? (
+                  <ChevronRightIcon boxSize={5} />
+                ) : (
+                  <ChevronLeftIcon boxSize={5} />
+                )
+              }
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsCollapsed(!isCollapsed)}
+              color={textColor}
+              _hover={{ bg: hoverBg }}
+            />
+          </Tooltip>
+        </Flex>
 
         <Divider />
 
@@ -81,27 +111,37 @@ const Sidebar = () => {
           {menuItems.map((item) => {
             const isActive = location.pathname === item.path;
             return (
-              <Link key={item.path} to={item.path}>
-                <Flex
-                  align="center"
-                  px={4}
-                  py={3}
-                  rounded="lg"
-                  bg={isActive ? "primary.500" : "transparent"}
-                  color={isActive ? "brand.dark" : textColor}
-                  fontWeight={isActive ? "bold" : "medium"}
-                  cursor="pointer"
-                  transition="all 0.2s"
-                  _hover={{
-                    bg: isActive ? "primary.500" : hoverBg,
-                  }}
-                >
-                  <HStack spacing={3}>
-                    {item.icon}
-                    <Text fontSize="sm">{item.name}</Text>
-                  </HStack>
-                </Flex>
-              </Link>
+              <Tooltip
+                key={item.path}
+                label={item.name}
+                placement="right"
+                isDisabled={!isCollapsed}
+                openDelay={500}
+              >
+                <Link to={item.path}>
+                  <Flex
+                    align="center"
+                    px={4}
+                    py={3}
+                    rounded="lg"
+                    bg={isActive ? "primary.500" : "transparent"}
+                    color={isActive ? "brand.dark" : textColor}
+                    fontWeight={isActive ? "bold" : "medium"}
+                    cursor="pointer"
+                    transition="all 0.2s"
+                    justifyContent={isCollapsed ? "center" : "flex-start"}
+                    _hover={{
+                      bg: isActive ? "primary.500" : hoverBg,
+                    }}
+                  >
+                    <HStack spacing={3} display={isCollapsed ? "none" : "flex"}>
+                      {item.icon}
+                      <Text fontSize="sm">{item.name}</Text>
+                    </HStack>
+                    {isCollapsed && item.icon}
+                  </Flex>
+                </Link>
+              </Tooltip>
             );
           })}
         </VStack>
