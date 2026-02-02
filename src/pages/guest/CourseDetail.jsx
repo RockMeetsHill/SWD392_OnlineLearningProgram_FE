@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import {
   Box,
   Container,
@@ -32,6 +32,7 @@ import { StarIcon, ChevronRightIcon, CheckCircleIcon } from "@chakra-ui/icons";
 import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
 import { courseAPI } from "../../services/courseService";
+import { AuthContext } from "../../context/AuthContext";
 
 // Custom Icons
 const PlayIcon = (props) => (
@@ -132,6 +133,9 @@ const CourseDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
 
+  //Auth context
+  const { user } = useContext(AuthContext);
+
   // State management
   const [course, setCourse] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -169,14 +173,26 @@ const CourseDetail = () => {
 
   // Handle enrollment
   const handleEnroll = async () => {
-    try {
-      await courseAPI.enrollInCourse(id);
-      navigate("/student/dashboard");
-    } catch (err) {
-      console.error("Error enrolling in course:", err);
-      // You might want to show a toast notification here
-      alert("Failed to enroll. Please try again.");
+    // Check if user is logged in
+    if (!user) {
+      navigate("/login", { state: { from: `/courses/${id}` } });
+      return;
     }
+
+    // If course is free, enroll directly
+    if (course.price === 0 || course.price === "0" || !course.price) {
+      try {
+        await courseAPI.enrollInCourse(id);
+        navigate("/student/courses");
+      } catch (err) {
+        console.error("Error enrolling in course:", err);
+        alert(err.message || "Failed to enroll. Please try again.");
+      }
+      return;
+    }
+
+    // If course has a price, navigate to payment page
+    navigate(`/student/payment?courseId=${id}`);
   };
 
   // Loading state

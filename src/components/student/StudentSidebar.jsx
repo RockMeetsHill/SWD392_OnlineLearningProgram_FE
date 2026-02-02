@@ -23,6 +23,11 @@ const Sidebar = () => {
   const logoColor = useColorModeValue("brand.dark", "primary.500");
   const hoverBg = useColorModeValue("gray.50", "gray.700");
 
+  // Force refresh khi về Home
+  const handleGoHome = () => {
+    window.location.href = "/";
+  };
+
   const menuItems = [
     {
       name: "Dashboard",
@@ -69,18 +74,21 @@ const Sidebar = () => {
         {/* Header with Logo and Toggle Button */}
         <Flex justify="space-between" align="center">
           {!isCollapsed && (
-            <Link to="/">
-              <HStack spacing={2} px={2} cursor="pointer">
-                <Text
-                  fontSize="2xl"
-                  fontFamily="'Pacifico', cursive"
-                  color={logoColor}
-                >
-                  BeeEnglish
-                </Text>
-                <Text fontSize="2xl">🐝</Text>
-              </HStack>
-            </Link>
+            <HStack
+              spacing={2}
+              px={2}
+              cursor="pointer"
+              onClick={handleGoHome}
+            >
+              <Text
+                fontSize="2xl"
+                fontFamily="'Pacifico', cursive"
+                color={logoColor}
+              >
+                BeeEnglish
+              </Text>
+              <Text fontSize="2xl">🐝</Text>
+            </HStack>
           )}
           <Tooltip
             label={isCollapsed ? "Expand" : "Collapse"}
@@ -106,7 +114,7 @@ const Sidebar = () => {
 
         <Divider />
 
-        {/* Menu Items */}
+        {/* Menu Items - giữ nguyên */}
         <VStack spacing={2} align="stretch">
           {menuItems.map((item) => {
             const isActive = location.pathname === item.path;
