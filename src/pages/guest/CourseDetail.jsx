@@ -27,11 +27,13 @@ import {
   AlertIcon,
   AlertTitle,
   AlertDescription,
+  useToast,
 } from "@chakra-ui/react";
 import { StarIcon, ChevronRightIcon, CheckCircleIcon } from "@chakra-ui/icons";
 import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
 import { courseAPI } from "../../services/courseService";
+import { useAuth } from "../../context/AuthContext";
 
 // Custom Icons
 const PlayIcon = (props) => (
@@ -176,6 +178,87 @@ const CourseDetail = () => {
       console.error("Error enrolling in course:", err);
       // You might want to show a toast notification here
       alert("Failed to enroll. Please try again.");
+    }
+  };
+
+  // Handle add to cart
+  const { user } = useAuth();
+  const toast = useToast();
+
+  const handleAddToCart = () => {
+    if (!user) {
+      console.log('[CourseDetail] User not logged in, showing login toast');
+      toast({
+        title: "Not Logged In",
+        description: "you must be logged in to add items to the cart.",
+        status: "warning",
+        duration: 3000,
+        isClosable: true,
+      });
+      navigate("/login");
+      return;
+    }
+
+    try {
+      // Get existing cart from localStorage
+      const existingCart = localStorage.getItem("cartItems");
+      const cartItems = existingCart ? JSON.parse(existingCart) : [];
+
+      // Check if course already in cart
+      const courseExists = cartItems.some(
+        (item) => item.courseId === id
+      );
+
+      if (courseExists) {
+        console.log('[CourseDetail] Course already in cart:', id);
+        toast({
+          title: "Already in Cart",
+          description: "This course is already in your cart.",
+          status: "warning",
+          duration: 3000,
+          isClosable: true,
+        });
+        return;
+      }
+
+      // Create cart item
+      const cartItem = {
+        id: id,
+        courseId: id,
+        price: course.price,
+        title: course.title,
+        thumbnail: course.thumbnail,
+        quantity: 1,
+        timestamp: new Date().toISOString(),
+      };
+
+      // Add new item to cart
+      cartItems.push(cartItem);
+      console.log('[CourseDetail] Added course to cart:', cartItem);
+
+      // Save to localStorage
+      localStorage.setItem("cartItems", JSON.stringify(cartItems));
+      console.log('[CourseDetail] Cart updated, total items:', cartItems.length);
+
+      toast({
+        title: "Course Added",
+        description: "Course has been added to cart",
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
+    } catch (err) {
+      console.error("Error adding to cart:", err);
+      toast({
+        id: `error-${Date.now()}`,
+        title: "Error",
+        description: "Failed to add course to cart",
+        status: "error",
+        duration: 3,
+        isClosable: true,
+        position: "top-right",
+        variant: "solid",
+      });
     }
   };
 
@@ -657,6 +740,7 @@ const CourseDetail = () => {
                         fontWeight="bold"
                         py={6}
                         borderRadius="xl"
+                        onClick={handleAddToCart}
                         _hover={{
                           bg: useColorModeValue("gray.50", "gray.700"),
                         }}
