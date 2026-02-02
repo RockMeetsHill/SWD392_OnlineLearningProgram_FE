@@ -25,9 +25,9 @@ import {
     PopoverArrow,
     Icon,
 } from '@chakra-ui/react'
-import { 
-    SearchIcon, 
-    BellIcon, 
+import {
+    SearchIcon,
+    BellIcon,
     ChevronDownIcon,
     SettingsIcon,
 } from '@chakra-ui/icons'
@@ -76,7 +76,7 @@ const StudentNavbar = () => {
     const hoverBg = useColorModeValue('gray.50', 'gray.700')
     const unreadBg = useColorModeValue('yellow.50', 'gray.700')
     const hoverItemBg = useColorModeValue('gray.50', 'gray.600')
-    
+
     const { user, logout } = useAuth()
     const navigate = useNavigate()
 
@@ -242,7 +242,7 @@ const StudentNavbar = () => {
                             </MenuItem>
                             <MenuItem
                                 icon={<UserIcon boxSize={4} />}
-                                onClick={() => navigate('/profile')}
+                                onClick={() => navigate('/student/profile')}
                             >
                                 My Profile
                             </MenuItem>

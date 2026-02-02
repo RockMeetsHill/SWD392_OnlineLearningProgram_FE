@@ -350,8 +350,8 @@ const StudentCourses = () => {
                                 {filterStatus === 'all'
                                     ? `All Courses (${filteredCourses.length})`
                                     : filterStatus === 'active'
-                                    ? `Active Courses (${filteredCourses.length})`
-                                    : `Completed Courses (${filteredCourses.length})`}
+                                        ? `Active Courses (${filteredCourses.length})`
+                                        : `Completed Courses (${filteredCourses.length})`}
                             </Heading>
 
                             {filteredCourses.length > 0 ? (

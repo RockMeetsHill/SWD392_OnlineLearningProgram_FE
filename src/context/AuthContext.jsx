@@ -6,22 +6,89 @@ const AuthContext = createContext(null);
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
-export const AuthProvider = ({ children }) => {
-    const [user, setUser] = useState(null);
+function AuthProvider({ children }) {
+    // Khởi tạo state từ localStorage ngay lập tức (không chờ useEffect)
+    const [user, setUser] = useState(() => {
+        try {
+            const storedUser = localStorage.getItem("user");
+            return storedUser ? JSON.parse(storedUser) : null;
+        } catch {
+            return null;
+        }
+    });
+
+    const [token, setToken] = useState(() => {
+        return localStorage.getItem("token") || null;
+    });
+
     const [isLoading, setIsLoading] = useState(true);
 
-    // Load user from localStorage on mount
+    // Verify token on mount
     useEffect(() => {
-        const storedUser = localStorage.getItem("user");
-        if (storedUser) {
-            try {
-                setUser(JSON.parse(storedUser));
-            } catch (error) {
-                console.error("Error parsing stored user:", error);
-                localStorage.removeItem("user");
+        let isMounted = true;
+
+        const verifyAuth = async () => {
+            if (token) {
+                try {
+                    const response = await fetch(`${API_URL}/auth/me`, {
+                        method: "GET",
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                        },
+                        credentials: "include",
+                    });
+
+                    if (!isMounted) return;
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        const userData = data.user || data;
+                        setUser(userData);
+                        localStorage.setItem("user", JSON.stringify(userData));
+                    } else if (response.status === 401) {
+                        setUser(null);
+                        setToken(null);
+                        localStorage.removeItem("user");
+                        localStorage.removeItem("token");
+                    }
+                } catch (error) {
+                    console.error("Auth verification error:", error);
+                }
             }
-        }
-        setIsLoading(false);
+
+            if (isMounted) {
+                setIsLoading(false);
+            }
+        };
+
+        verifyAuth();
+
+        return () => {
+            isMounted = false;
+        };
+    }, [token]);
+
+    // Sync giữa các tabs
+    useEffect(() => {
+        const handleStorageChange = (e) => {
+            if (e.key === "user") {
+                if (e.newValue) {
+                    try {
+                        setUser(JSON.parse(e.newValue));
+                    } catch {
+                        setUser(null);
+                    }
+                } else {
+                    setUser(null);
+                }
+            }
+            if (e.key === "token") {
+                setToken(e.newValue);
+            }
+        };
+
+        window.addEventListener("storage", handleStorageChange);
+        return () => window.removeEventListener("storage", handleStorageChange);
     }, []);
 
     // Login function
@@ -42,18 +109,18 @@ export const AuthProvider = ({ children }) => {
         }
 
         setUser(data.user);
+        setToken(data.token);
         localStorage.setItem("user", JSON.stringify(data.user));
+        localStorage.setItem("token", data.token);
 
         return data;
     };
 
     // Google Sign In function
     const loginWithGoogle = async () => {
-        // Step 1: Open Google popup and get Firebase token
         const result = await signInWithPopup(auth, googleProvider);
         const idToken = await result.user.getIdToken();
 
-        // Step 2: Send token to backend for verification
         const response = await fetch(`${API_URL}/auth/google`, {
             method: "POST",
             headers: {
@@ -69,9 +136,10 @@ export const AuthProvider = ({ children }) => {
             throw new Error(data.error || "Google sign-in failed");
         }
 
-        // Step 3: Save user to state and localStorage
         setUser(data.user);
+        setToken(data.token);
         localStorage.setItem("user", JSON.stringify(data.user));
+        localStorage.setItem("token", data.token);
 
         return data;
     };
@@ -102,12 +170,17 @@ export const AuthProvider = ({ children }) => {
             await fetch(`${API_URL}/auth/logout`, {
                 method: "POST",
                 credentials: "include",
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
             });
         } catch (error) {
             console.error("Logout error:", error);
         } finally {
             setUser(null);
+            setToken(null);
             localStorage.removeItem("user");
+            localStorage.removeItem("token");
         }
     };
 
@@ -117,11 +190,11 @@ export const AuthProvider = ({ children }) => {
         return user.roles.includes(role);
     };
 
-    // Check if user is authenticated
-    const isAuthenticated = !!user;
+    const isAuthenticated = !!user && !!token;
 
     const value = {
         user,
+        token,
         isLoading,
         isAuthenticated,
         login,
@@ -132,14 +205,14 @@ export const AuthProvider = ({ children }) => {
     };
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-};
+}
 
-export const useAuth = () => {
+function useAuth() {
     const context = useContext(AuthContext);
     if (!context) {
         throw new Error("useAuth must be used within an AuthProvider");
     }
     return context;
-};
+}
 
-export default AuthContext;
+export { AuthContext, AuthProvider, useAuth };
