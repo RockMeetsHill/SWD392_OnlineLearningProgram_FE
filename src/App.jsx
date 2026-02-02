@@ -8,7 +8,8 @@ import CourseDetail from './pages/guest/CourseDetail'
 import SignUpSuccess from './pages/guest/SignUpSuccess'
 import PaymentSuccess from './pages/student/PaymentSuccess'
 import StudentDashboard from './pages/student/Dashboard'
-
+import StudentCourses from './pages/student/StudentCourses' 
+import Profile from './pages/student/Profile'
 function App() {
 
   return (
@@ -21,7 +22,8 @@ function App() {
       <Route path="/register/success" element={<SignUpSuccess />} />
       <Route path="/student/payment/success" element={<PaymentSuccess />} />
       <Route path="/student/dashboard" element={<StudentDashboard />} />
-
+      <Route path="/student/courses" element={<StudentCourses />} />
+      <Route path="/profile" element={<Profile />} />
     </Routes>
   )
 }

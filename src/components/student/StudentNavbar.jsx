@@ -66,17 +66,21 @@ const DashboardIcon = (props) => (
 );
 
 const StudentNavbar = () => {
-  const bgColor = useColorModeValue("white", "gray.800");
-  const borderColor = useColorModeValue("gray.200", "gray.700");
-  const textColor = useColorModeValue("brand.dark", "white");
-  const mutedColor = useColorModeValue("gray.600", "gray.400");
-  const menuBg = useColorModeValue("white", "gray.800");
-  const hoverBg = useColorModeValue("gray.100", "gray.700");
-  const unreadBg = useColorModeValue("yellow.50", "gray.700");
-  const hoverItemBg = useColorModeValue("gray.50", "gray.600");
+    const bgColor = useColorModeValue(
+        'rgba(255, 253, 245, 0.9)',
+        'rgba(10, 25, 38, 0.9)'
+    )
+    const borderColor = useColorModeValue('gray.100', 'gray.800')
+    const textColor = useColorModeValue('brand.dark', 'white')
+    const mutedColor = useColorModeValue('gray.600', 'gray.400')
+    const menuBg = useColorModeValue('white', 'gray.800')
+    const hoverBg = useColorModeValue('gray.50', 'gray.700')
+    const unreadBg = useColorModeValue('yellow.50', 'gray.700')
+    const hoverItemBg = useColorModeValue('gray.50', 'gray.600')
+    
+    const { user, logout } = useAuth()
+    const navigate = useNavigate()
 
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
 
   // Mock notifications - replace with real data later
@@ -135,78 +139,78 @@ const StudentNavbar = () => {
           />
         </InputGroup>
 
-        {/* User Actions */}
-        <HStack spacing={3}>
-          {/* Notifications */}
-          <Popover placement="bottom-end">
-            <PopoverTrigger>
-              <Box position="relative">
-                <IconButton
-                  icon={<BellIcon boxSize={5} />}
-                  variant="ghost"
-                  borderRadius="full"
-                  color={textColor}
-                  _hover={{ bg: hoverBg }}
-                  aria-label="Notifications"
-                />
-                {unreadCount > 0 && (
-                  <Badge
-                    position="absolute"
-                    top="-1"
-                    right="-1"
-                    colorScheme="red"
-                    borderRadius="full"
-                    minW="20px"
-                    textAlign="center"
-                    fontSize="xs"
-                  >
-                    {unreadCount}
-                  </Badge>
-                )}
-              </Box>
-            </PopoverTrigger>
-            <PopoverContent bg={menuBg} w="300px">
-              <PopoverArrow bg={menuBg} />
-              <PopoverHeader fontWeight="bold" borderBottomWidth="1px">
-                Notifications
-              </PopoverHeader>
-              <PopoverBody p={0}>
-                {notifications.length > 0 ? (
-                  <VStack align="stretch" spacing={0}>
-                    {notifications.map((notification) => (
-                      <Box
-                        key={notification.id}
-                        p={3}
-                        borderBottomWidth="1px"
-                        bg={!notification.isRead ? unreadBg : "transparent"}
-                        _hover={{ bg: hoverItemBg }}
-                        cursor="pointer"
-                      >
-                        <Text fontSize="sm">{notification.message}</Text>
-                      </Box>
-                    ))}
-                    <Box p={2} textAlign="center">
-                      <Text
-                        fontSize="sm"
-                        color="primary.500"
-                        fontWeight="semibold"
-                        cursor="pointer"
-                        onClick={() => navigate("/notifications")}
-                      >
-                        View all notifications
-                      </Text>
-                    </Box>
-                  </VStack>
-                ) : (
-                  <Box p={4} textAlign="center">
-                    <Text fontSize="sm" color="gray.500">
-                      No notifications
-                    </Text>
-                  </Box>
-                )}
-              </PopoverBody>
-            </PopoverContent>
-          </Popover>
+                {/* User Actions */}
+                <HStack spacing={2} flexShrink={0}>
+                    {/* Notifications */}
+                    <Popover placement="bottom-end">
+                        <PopoverTrigger>
+                            <Box position="relative">
+                                <IconButton
+                                    icon={<BellIcon boxSize={5} />}
+                                    variant="ghost"
+                                    borderRadius="full"
+                                    color={textColor}
+                                    _hover={{ bg: hoverBg }}
+                                    aria-label="Notifications"
+                                />
+                                {unreadCount > 0 && (
+                                    <Badge
+                                        position="absolute"
+                                        top="-1"
+                                        right="-1"
+                                        colorScheme="red"
+                                        borderRadius="full"
+                                        minW="20px"
+                                        textAlign="center"
+                                        fontSize="xs"
+                                    >
+                                        {unreadCount}
+                                    </Badge>
+                                )}
+                            </Box>
+                        </PopoverTrigger>
+                        <PopoverContent bg={menuBg} w="300px">
+                            <PopoverArrow bg={menuBg} />
+                            <PopoverHeader fontWeight="bold" borderBottomWidth="1px">
+                                Notifications
+                            </PopoverHeader>
+                            <PopoverBody p={0}>
+                                {notifications.length > 0 ? (
+                                    <VStack align="stretch" spacing={0}>
+                                        {notifications.map((notification) => (
+                                            <Box
+                                                key={notification.id}
+                                                p={3}
+                                                borderBottomWidth="1px"
+                                                bg={!notification.isRead ? unreadBg : 'transparent'}
+                                                _hover={{ bg: hoverItemBg }}
+                                                cursor="pointer"
+                                            >
+                                                <Text fontSize="sm">{notification.message}</Text>
+                                            </Box>
+                                        ))}
+                                        <Box p={2} textAlign="center">
+                                            <Text
+                                                fontSize="sm"
+                                                color="primary.500"
+                                                fontWeight="semibold"
+                                                cursor="pointer"
+                                                onClick={() => navigate('/notifications')}
+                                            >
+                                                View all notifications
+                                            </Text>
+                                        </Box>
+                                    </VStack>
+                                ) : (
+                                    <Box p={4} textAlign="center">
+                                        <Text fontSize="sm" color="gray.500">
+                                            No notifications
+                                        </Text>
+                                    </Box>
+                                )}
+                            </PopoverBody>
+                        </PopoverContent>
+                    </Popover>
 
           {/* User Menu */}
           <Menu>
