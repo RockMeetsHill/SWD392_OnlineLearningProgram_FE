@@ -41,6 +41,7 @@ import {
 } from "@chakra-ui/icons";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { useEffect } from "react";
 
 // Custom Cart Icon using Chakra's Icon component
 const CartIcon = (props) => (
@@ -86,7 +87,15 @@ const Navbar = () => {
     const { colorMode, toggleColorMode } = useColorMode();
     const navigate = useNavigate();
     const { isOpen, onOpen, onClose } = useDisclosure();
-    const { user, isAuthenticated, logout } = useAuth();
+    const { user, token, isAuthenticated, isLoading, logout } = useAuth();
+
+    useEffect(() => {
+        console.log("Auth State:", {
+            isAuthenticated,
+            hasToken: !!token,
+            hasUser: !!user
+        });
+    }, [isAuthenticated, token, user]);
 
     const bgColor = useColorModeValue(
         "rgba(255, 253, 245, 0.9)",
@@ -176,17 +185,6 @@ const Navbar = () => {
                                 transition="color 0.2s"
                             >
                                 Courses
-                            </Text>
-                        </Link>
-                        <Link to="/categories">
-                            <Text
-                                color={textColor}
-                                fontWeight="bold"
-                                fontSize="lg"
-                                _hover={{ color: "primary.500" }}
-                                transition="color 0.2s"
-                            >
-                                Categories
                             </Text>
                         </Link>
                         <Link to="/about">

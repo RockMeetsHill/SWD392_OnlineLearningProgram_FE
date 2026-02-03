@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import {
   Box,
   Container,
@@ -27,13 +27,12 @@ import {
   AlertIcon,
   AlertTitle,
   AlertDescription,
-  useToast,
 } from "@chakra-ui/react";
 import { StarIcon, ChevronRightIcon, CheckCircleIcon } from "@chakra-ui/icons";
 import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
 import { courseAPI } from "../../services/courseService";
-import { useAuth } from "../../context/AuthContext";
+import { AuthContext } from "../../context/AuthContext";
 
 // Custom Icons
 const PlayIcon = (props) => (
@@ -134,6 +133,9 @@ const CourseDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
 
+  //Auth context
+  const { user } = useContext(AuthContext);
+
   // State management
   const [course, setCourse] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -171,95 +173,26 @@ const CourseDetail = () => {
 
   // Handle enrollment
   const handleEnroll = async () => {
-    try {
-      await courseAPI.enrollInCourse(id);
-      navigate("/student/dashboard");
-    } catch (err) {
-      console.error("Error enrolling in course:", err);
-      // You might want to show a toast notification here
-      alert("Failed to enroll. Please try again.");
-    }
-  };
-
-  // Handle add to cart
-  const { user } = useAuth();
-  const toast = useToast();
-
-  const handleAddToCart = () => {
+    // Check if user is logged in
     if (!user) {
-      console.log('[CourseDetail] User not logged in, showing login toast');
-      toast({
-        title: "Not Logged In",
-        description: "you must be logged in to add items to the cart.",
-        status: "warning",
-        duration: 3000,
-        isClosable: true,
-      });
-      navigate("/login");
+      navigate("/login", { state: { from: `/courses/${id}` } });
       return;
     }
 
-    try {
-      // Get existing cart from localStorage
-      const existingCart = localStorage.getItem("cartItems");
-      const cartItems = existingCart ? JSON.parse(existingCart) : [];
-
-      // Check if course already in cart
-      const courseExists = cartItems.some(
-        (item) => item.courseId === id
-      );
-
-      if (courseExists) {
-        console.log('[CourseDetail] Course already in cart:', id);
-        toast({
-          title: "Already in Cart",
-          description: "This course is already in your cart.",
-          status: "warning",
-          duration: 3000,
-          isClosable: true,
-        });
-        return;
+    // If course is free, enroll directly
+    if (course.price === 0 || course.price === "0" || !course.price) {
+      try {
+        await courseAPI.enrollInCourse(id);
+        navigate("/student/courses");
+      } catch (err) {
+        console.error("Error enrolling in course:", err);
+        alert(err.message || "Failed to enroll. Please try again.");
       }
-
-      // Create cart item
-      const cartItem = {
-        id: id,
-        courseId: id,
-        price: course.price,
-        title: course.title,
-        thumbnail: course.thumbnail,
-        quantity: 1,
-        timestamp: new Date().toISOString(),
-      };
-
-      // Add new item to cart
-      cartItems.push(cartItem);
-      console.log('[CourseDetail] Added course to cart:', cartItem);
-
-      // Save to localStorage
-      localStorage.setItem("cartItems", JSON.stringify(cartItems));
-      console.log('[CourseDetail] Cart updated, total items:', cartItems.length);
-
-      toast({
-        title: "Course Added",
-        description: "Course has been added to cart",
-        status: "success",
-        duration: 3000,
-        isClosable: true,
-      });
-    } catch (err) {
-      console.error("Error adding to cart:", err);
-      toast({
-        id: `error-${Date.now()}`,
-        title: "Error",
-        description: "Failed to add course to cart",
-        status: "error",
-        duration: 3,
-        isClosable: true,
-        position: "top-right",
-        variant: "solid",
-      });
+      return;
     }
+
+    // If course has a price, navigate to payment page
+    navigate(`/student/payment?courseId=${id}`);
   };
 
   // Loading state
@@ -685,7 +618,7 @@ const CourseDetail = () => {
                     >
                       {course.price === 0 || course.price === "0"
                         ? "Free"
-                        : `${course.price} VNĐ`}
+                        : `${Number(course.price).toLocaleString("vi-VN")} VNĐ`}
                     </Text>
                     {course.originalPrice &&
                       course.originalPrice > course.price && (
@@ -695,7 +628,7 @@ const CourseDetail = () => {
                             color="gray.400"
                             textDecoration="line-through"
                           >
-                            {course.originalPrice} VNĐ
+                            {Number(course.originalPrice).toLocaleString("vi-VN")} VNĐ
                           </Text>
                           <Badge
                             bg="primary.500"
@@ -740,7 +673,6 @@ const CourseDetail = () => {
                         fontWeight="bold"
                         py={6}
                         borderRadius="xl"
-                        onClick={handleAddToCart}
                         _hover={{
                           bg: useColorModeValue("gray.50", "gray.700"),
                         }}
