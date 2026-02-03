@@ -13,7 +13,7 @@ import StudentCourses from './pages/student/StudentCourses'
 import Profile from './pages/student/Profile'
 import InstructorDashboard from './pages/instructor/Dashboard'
 import Payment from './pages/student/Payment'
-
+import Cart from './pages/student/Cart'
 function App() {
 
   return (
@@ -24,7 +24,7 @@ function App() {
       <Route path="/courses" element={<CourseSearch />} />
       <Route path="/courses/:id" element={<CourseDetail />} />
       <Route path="/register/success" element={<SignUpSuccess />} />
-
+      <Route path="/cart" element={<Cart />} />
       {/* Payment Routes */}
       <Route path="/student/payment" element={<Payment />} />
       <Route path="/student/payment/success" element={<PaymentSuccess />} />

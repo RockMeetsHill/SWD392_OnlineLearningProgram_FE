@@ -27,12 +27,13 @@ import {
   AlertIcon,
   AlertTitle,
   AlertDescription,
+  useToast,
 } from "@chakra-ui/react";
 import { StarIcon, ChevronRightIcon, CheckCircleIcon } from "@chakra-ui/icons";
 import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
 import { courseAPI } from "../../services/courseService";
-import { AuthContext } from "../../context/AuthContext";
+import { useAuth } from "../../context/AuthContext";
 
 // Custom Icons
 const PlayIcon = (props) => (
@@ -133,13 +134,14 @@ const CourseDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  //Auth context
-  const { user } = useContext(AuthContext);
 
   // State management
   const [course, setCourse] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Get auth user
+  const { user } = useAuth();
 
   // Color mode values
   const bgColor = useColorModeValue("white", "gray.900");
@@ -186,13 +188,102 @@ const CourseDetail = () => {
         navigate("/student/courses");
       } catch (err) {
         console.error("Error enrolling in course:", err);
-        alert(err.message || "Failed to enroll. Please try again.");
+        toast({
+          title: "Enrollment Failed",
+          description: err.message || "Failed to enroll. Please try again.",
+          status: "error",
+          duration: 3000,
+          isClosable: true,
+          position: "top-right",
+        });
       }
       return;
     }
 
     // If course has a price, navigate to payment page
     navigate(`/student/payment?courseId=${id}`);
+  };
+
+  // Handle add to cart
+  const toast = useToast();
+
+  const handleAddToCart = () => {
+    if (!user) {
+      console.log('[CourseDetail] User not logged in');
+      toast({
+        title: "Login Required",
+        description: "Please login to add courses to your cart.",
+        status: "warning",
+        duration: 3000,
+        isClosable: true,
+        position: "top-right",
+      });
+      navigate("/login");
+      return;
+    }
+
+    try {
+      // Get existing cart from localStorage
+      const existingCart = localStorage.getItem("cartItems");
+      const cartItems = existingCart ? JSON.parse(existingCart) : [];
+
+      // Check if course already in cart
+      const courseExists = cartItems.some(
+        (item) => item.courseId === id
+      );
+
+      if (courseExists) {
+        console.log('[CourseDetail] Course already in cart:', id);
+        toast({
+          title: "Already in Cart",
+          description: "This course is already in your cart!",
+          status: "info",
+          duration: 3000,
+          isClosable: true,
+          position: "top-right",
+        });
+        return;
+      }
+
+      // Create cart item
+      const cartItem = {
+        id: id,
+        courseId: id,
+        price: course.price,
+        title: course.title,
+        thumbnail: course.thumbnail,
+        quantity: 1,
+        timestamp: new Date().toISOString(),
+      };
+
+      // Add new item to cart
+      cartItems.push(cartItem);
+      console.log('[CourseDetail] Added course to cart:', cartItem);
+
+      // Save to localStorage
+      localStorage.setItem("cartItems", JSON.stringify(cartItems));
+      console.log('[CourseDetail] Cart updated, total items:', cartItems.length);
+
+      toast({
+        title: "Success",
+        description: "Course added to cart successfully!",
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+        position: "top-right",
+      });
+      console.log('[CourseDetail] Showing success notification');
+    } catch (err) {
+      console.error("Error adding to cart:", err);
+      toast({
+        title: "Error",
+        description: "Failed to add course to cart: " + err.message,
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+        position: "top-right",
+      });
+    }
   };
 
   // Loading state
@@ -673,6 +764,7 @@ const CourseDetail = () => {
                         fontWeight="bold"
                         py={6}
                         borderRadius="xl"
+                        onClick={handleAddToCart}
                         _hover={{
                           bg: useColorModeValue("gray.50", "gray.700"),
                         }}
