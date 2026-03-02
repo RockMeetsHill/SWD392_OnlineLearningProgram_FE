@@ -42,7 +42,8 @@ import {
 import { useSearchParams, useNavigate } from "react-router-dom";
 import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
-import { courseAPI } from "../../services/courseService";
+import { courseAPI } from "../../services/courseServiceOld";
+import { useAuth } from "../../context/AuthContext";
 
 // Custom Icon Components
 const CartIcon = (props) => (
@@ -491,6 +492,7 @@ const CourseSearch = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const toast = useToast();
+  const { user } = useAuth();
 
   const [searchQuery, setSearchQuery] = useState(searchParams.get("q") || "");
   const [filters, setFilters] = useState({
@@ -636,14 +638,82 @@ const CourseSearch = () => {
   };
 
   const handleAddToCart = (course) => {
-    toast({
-      title: "Added to cart",
-      description: `${course.title} has been added to your cart.`,
-      status: "success",
-      duration: 3000,
-      isClosable: true,
-    });
-    // TODO: Implement actual cart functionality
+    if (!user) {
+      console.log('[CourseSearch] User not logged in');
+      toast({
+        title: "Login Required",
+        description: "Please login to add courses to your cart.",
+        status: "warning",
+        duration: 3000,
+        isClosable: true,
+        position: "top-right",
+      });
+      navigate("/login");
+      return;
+    }
+
+    try {
+      // Get existing cart from localStorage
+      const existingCart = localStorage.getItem("cartItems");
+      const cartItems = existingCart ? JSON.parse(existingCart) : [];
+
+      // Check if course already in cart
+      const courseExists = cartItems.some(
+        (item) => item.courseId === course.courseId
+      );
+
+      if (courseExists) {
+        console.log('[CourseSearch] Course already in cart:', course.courseId);
+        toast({
+          title: "Already in Cart",
+          description: "This course is already in your cart!",
+          status: "info",
+          duration: 3000,
+          isClosable: true,
+          position: "top-right",
+        });
+        return;
+      }
+
+      // Create cart item
+      const cartItem = {
+        id: course.courseId,
+        courseId: course.courseId,
+        price: course.price,
+        title: course.title,
+        thumbnail: course.thumbnail,
+        quantity: 1,
+        timestamp: new Date().toISOString(),
+      };
+
+      // Add new item to cart
+      cartItems.push(cartItem);
+      console.log('[CourseSearch] Added course to cart:', cartItem);
+
+      // Save to localStorage
+      localStorage.setItem("cartItems", JSON.stringify(cartItems));
+      console.log('[CourseSearch] Cart updated, total items:', cartItems.length);
+
+      toast({
+        title: "Success",
+        description: "Course added to cart successfully!",
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+        position: "top-right",
+      });
+      console.log('[CourseSearch] Showing success notification');
+    } catch (err) {
+      console.error("Error adding to cart:", err);
+      toast({
+        title: "Error",
+        description: "Failed to add course to cart: " + err.message,
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+        position: "top-right",
+      });
+    }
   };
 
   const handlePageChange = (page) => {

@@ -34,7 +34,6 @@ function App() {
       <Route path="/courses/:id" element={<CourseDetail />} />
       <Route path="/register/success" element={<SignUpSuccess />} />
       <Route path="/cart" element={<Cart />} />
-
       {/* Payment Routes */}
       <Route path="/student/payment" element={<ProtectedRoute><Payment /></ProtectedRoute>} />
       <Route path="/student/payment/success" element={<ProtectedRoute><PaymentSuccess /></ProtectedRoute>} />

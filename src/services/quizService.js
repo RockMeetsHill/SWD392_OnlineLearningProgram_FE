@@ -5,16 +5,9 @@ const getAuthToken = () => localStorage.getItem("token");
 
 const fetchWithAuth = async (url, options = {}) => {
   const token = getAuthToken();
-  console.log("Token:", token ? "exists" : "missing"); // Debug log
-  console.log("Request URL:", url); // Debug log
-
   const headers = { "Content-Type": "application/json", ...options.headers };
   if (token) headers.Authorization = `Bearer ${token}`;
-
   const response = await fetch(url, { ...options, headers, credentials: "include" });
-
-  console.log("Response status:", response.status); // Debug log
-
   let data;
   try {
     data = await response.json();
@@ -33,10 +26,6 @@ export const quizAPI = {
     const data = await fetchWithAuth(`${API_URL}/quizzes/${quizId}`, { method: "GET" });
     return data.quiz != null ? data.quiz : data;
   },
-
-  // Thêm function mới để lấy questions của quiz
-  getQuestions: (quizId) =>
-    fetchWithAuth(`${API_URL}/quizzes/${quizId}/questions`, { method: "GET" }),
 
   createQuiz: (lessonId, payload) =>
     fetchWithAuth(`${API_URL}/quizzes/lesson/${lessonId}`, {
