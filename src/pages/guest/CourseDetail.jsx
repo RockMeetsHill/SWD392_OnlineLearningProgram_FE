@@ -32,7 +32,7 @@ import {
 import { StarIcon, ChevronRightIcon, CheckCircleIcon } from "@chakra-ui/icons";
 import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
-import { courseAPI } from "../../services/courseService";
+import { courseAPI } from "../../services/courseServiceOld";
 import { useAuth } from "../../context/AuthContext";
 
 // Custom Icons

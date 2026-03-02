@@ -42,7 +42,7 @@ import {
 import { useSearchParams, useNavigate } from "react-router-dom";
 import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
-import { courseAPI } from "../../services/courseService";
+import { courseAPI } from "../../services/courseServiceOld";
 import { useAuth } from "../../context/AuthContext";
 
 // Custom Icon Components
