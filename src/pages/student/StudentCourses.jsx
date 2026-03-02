@@ -20,16 +20,27 @@ import {
     Icon,
     Select,
     Divider,
+    Spinner,
+    useToast,
+    Image,
 } from '@chakra-ui/react'
 import { ChevronRightIcon, SearchIcon } from '@chakra-ui/icons'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import Sidebar from '../../components/student/StudentSidebar'
 import StudentNavbar from '../../components/student/StudentNavbar'
 import { useAuth } from '../../context/AuthContext'
+import { getStudentCourses } from '../../services/student/dashboardService'
 
 const StudentCourses = () => {
     const [searchQuery, setSearchQuery] = useState('')
     const [filterStatus, setFilterStatus] = useState('all')
+    const [courses, setCourses] = useState([])
+    const [loading, setLoading] = useState(true)
+    const [error, setError] = useState(null)
+
+    const navigate = useNavigate()
+    const toast = useToast()
 
     // Color mode values
     const bgColor = useColorModeValue('#f8f8f5', 'gray.900')
@@ -39,96 +50,65 @@ const StudentCourses = () => {
 
     const { user } = useAuth()
 
-    // Mock data - All courses
-    const allCourses = [
-        {
-            id: 1,
-            title: 'IELTS Preparation Elite',
-            instructor: 'Dr. Sarah Williams',
-            progress: 67,
-            completed: 12,
-            total: 18,
-            badge: 'SELF-PACED',
-            icon: '🎯',
-            status: 'active',
-            enrollDate: 'Oct 1, 2023',
-            lastAccessed: '2 hours ago',
-            lessons: 18,
-        },
-        {
-            id: 2,
-            title: 'Business Communication',
-            instructor: 'Mark Thompson',
-            progress: 20,
-            completed: 4,
-            total: 20,
-            badge: 'SELF-PACED',
-            icon: '💼',
-            status: 'active',
-            enrollDate: 'Sep 15, 2023',
-            lastAccessed: '1 day ago',
-            lessons: 20,
-        },
-        {
-            id: 3,
-            title: 'Advanced Grammar Mastery',
-            instructor: 'Jennifer Lee',
-            progress: 100,
-            completed: 15,
-            total: 15,
-            badge: 'COMPLETED',
-            icon: '📚',
-            status: 'completed',
-            enrollDate: 'Aug 1, 2023',
-            lastAccessed: 'Sep 28, 2023',
-            lessons: 15,
-        },
-        {
-            id: 4,
-            title: 'Pronunciation Perfection',
-            instructor: 'Michael Chen',
-            progress: 45,
-            completed: 9,
-            total: 20,
-            badge: 'SELF-PACED',
-            icon: '🎤',
-            status: 'active',
-            enrollDate: 'Sep 20, 2023',
-            lastAccessed: '3 hours ago',
-            lessons: 20,
-        },
-        {
-            id: 5,
-            title: 'English for Beginners',
-            instructor: 'Emma Wilson',
-            progress: 100,
-            completed: 12,
-            total: 12,
-            badge: 'COMPLETED',
-            icon: '🌟',
-            status: 'completed',
-            enrollDate: 'Jul 10, 2023',
-            lastAccessed: 'Sep 15, 2023',
-            lessons: 12,
-        },
-        {
-            id: 6,
-            title: 'TOEFL Intensive',
-            instructor: 'Dr. Robert Davis',
-            progress: 35,
-            completed: 7,
-            total: 20,
-            badge: 'SELF-PACED',
-            icon: '🎓',
-            status: 'active',
-            enrollDate: 'Oct 10, 2023',
-            lastAccessed: '5 hours ago',
-            lessons: 20,
-        },
-    ]
+    // Fetch courses từ API
+    useEffect(() => {
+        const fetchCourses = async () => {
+            if (!user?.userId) {
+                setLoading(false)
+                return
+            }
+
+            try {
+                setLoading(true)
+                const data = await getStudentCourses(user.userId)
+
+                // Transform data từ API để phù hợp với UI
+                const transformedCourses = data.map((course) => {
+                    // Tính tổng số lessons từ modules
+                    const totalLessons = course.modules?.reduce(
+                        (acc, module) => acc + (module._count?.lessons || 0),
+                        0
+                    ) || 0
+
+                    return {
+                        id: course.courseId,
+                        title: course.title,
+                        instructor: course.instructor?.fullName || 'Unknown Instructor',
+                        instructorAvatar: course.instructor?.avatarUrl,
+                        thumbnail: course.thumbnailUrl,
+                        description: course.description,
+                        levelTarget: course.levelTarget,
+                        totalLessons,
+                        enrolledAt: course.enrolledAt,
+                        expiryDate: course.expiryDate,
+                        // Giả định status dựa vào progress (có thể cần API riêng cho progress)
+                        progress: 0, // Cần API để lấy progress thực tế
+                        completedLessons: 0, // Cần API để lấy số lesson đã hoàn thành
+                        status: 'active', // Mặc định active, cần logic để xác định completed
+                    }
+                })
+
+                setCourses(transformedCourses)
+            } catch (err) {
+                console.error('Error fetching courses:', err)
+                setError(err.response?.data?.error || 'Failed to load courses')
+                toast({
+                    title: 'Error',
+                    description: 'Failed to load your courses',
+                    status: 'error',
+                    duration: 5000,
+                    isClosable: true,
+                })
+            } finally {
+                setLoading(false)
+            }
+        }
+
+        fetchCourses()
+    }, [user?.userId, toast])
 
     // Filter courses
-    const filteredCourses = allCourses.filter((course) => {
+    const filteredCourses = courses.filter((course) => {
         const matchesSearch =
             course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
             course.instructor.toLowerCase().includes(searchQuery.toLowerCase())
@@ -137,36 +117,93 @@ const StudentCourses = () => {
         return matchesSearch && matchesFilter
     })
 
-    const activeCourses = allCourses.filter((c) => c.status === 'active')
-    const completedCourses = allCourses.filter((c) => c.status === 'completed')
+    const activeCourses = courses.filter((c) => c.status === 'active')
+    const completedCourses = courses.filter((c) => c.status === 'completed')
+
+    // Format date helper
+    const formatDate = (dateString) => {
+        if (!dateString) return 'N/A'
+        return new Date(dateString).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+        })
+    }
+
+    // Get level badge color
+    const getLevelColor = (level) => {
+        switch (level?.toLowerCase()) {
+            case 'beginner':
+                return 'green'
+            case 'intermediate':
+                return 'yellow'
+            case 'advanced':
+                return 'red'
+            default:
+                return 'gray'
+        }
+    }
+
+    // Navigate to course learn page
+    const handleContinueLearning = (courseId) => {
+        navigate(`/student/courses/${courseId}/learn`)
+    }
 
     const CourseCard = ({ course }) => (
         <Card bg={cardBg} shadow="sm" rounded="xl" transition="all 0.3s" _hover={{ shadow: 'md' }}>
             <CardBody>
                 <VStack align="stretch" spacing={4}>
+                    {/* Thumbnail */}
+                    <Box
+                        w="100%"
+                        h="150px"
+                        bg={useColorModeValue('gray.100', 'gray.700')}
+                        rounded="lg"
+                        overflow="hidden"
+                    >
+                        {course.thumbnail ? (
+                            <Image
+                                src={course.thumbnail}
+                                alt={course.title}
+                                w="100%"
+                                h="100%"
+                                objectFit="cover"
+                            />
+                        ) : (
+                            <Flex
+                                w="100%"
+                                h="100%"
+                                align="center"
+                                justify="center"
+                                fontSize="4xl"
+                            >
+                                📚
+                            </Flex>
+                        )}
+                    </Box>
+
                     {/* Header */}
                     <Flex justify="space-between" align="start">
-                        <Flex
-                            w={12}
-                            h={12}
-                            bg={useColorModeValue('blue.50', 'blue.900')}
-                            rounded="lg"
-                            align="center"
-                            justify="center"
-                            fontSize="2xl"
+                        <Badge
+                            colorScheme={getLevelColor(course.levelTarget)}
+                            fontSize="xs"
+                            fontWeight="bold"
+                            px={2}
+                            py={1}
+                            rounded="md"
                         >
-                            {course.icon}
-                        </Flex>
+                            {course.levelTarget || 'All Levels'}
+                        </Badge>
                         <Badge
                             bg={
                                 course.status === 'active'
-                                    ? useColorModeValue('gray.100', 'gray.700')
-                                    : 'primary.100'
+                                    ? useColorModeValue('blue.100', 'blue.900')
+                                    : 'green.100'
                             }
                             color={
                                 course.status === 'active'
-                                    ? mutedColor
-                                    : 'primary.700'
+                                    ? 'blue.700'
+                                    : 'green.700'
                             }
                             fontSize="xs"
                             fontWeight="bold"
@@ -174,18 +211,28 @@ const StudentCourses = () => {
                             py={1}
                             rounded="md"
                         >
-                            {course.badge}
+                            {course.status === 'completed' ? 'COMPLETED' : 'IN PROGRESS'}
                         </Badge>
                     </Flex>
 
                     {/* Title & Instructor */}
                     <VStack align="stretch" spacing={1}>
-                        <Heading size="sm" color={textColor}>
+                        <Heading size="sm" color={textColor} noOfLines={2}>
                             {course.title}
                         </Heading>
-                        <Text fontSize="sm" color={mutedColor}>
-                            Instructor: {course.instructor}
-                        </Text>
+                        <HStack spacing={2}>
+                            {course.instructorAvatar && (
+                                <Image
+                                    src={course.instructorAvatar}
+                                    alt={course.instructor}
+                                    boxSize="20px"
+                                    rounded="full"
+                                />
+                            )}
+                            <Text fontSize="sm" color={mutedColor}>
+                                {course.instructor}
+                            </Text>
+                        </HStack>
                     </VStack>
 
                     {/* Progress Bar */}
@@ -200,7 +247,7 @@ const StudentCourses = () => {
                                 Progress
                             </Text>
                             <Text fontSize="xs" fontWeight="bold" color={textColor}>
-                                {course.progress}% ({course.completed}/{course.total} LESSONS)
+                                {course.progress}% ({course.completedLessons}/{course.totalLessons} LESSONS)
                             </Text>
                         </Flex>
                         <Progress
@@ -213,9 +260,11 @@ const StudentCourses = () => {
                     </Box>
 
                     {/* Meta Info */}
-                    <HStack spacing={4} fontSize="xs" color={mutedColor}>
-                        <Text>📅 Enrolled: {course.enrollDate}</Text>
-                        <Text>⏱️ {course.lastAccessed}</Text>
+                    <HStack spacing={4} fontSize="xs" color={mutedColor} flexWrap="wrap">
+                        <Text>📅 Enrolled: {formatDate(course.enrolledAt)}</Text>
+                        {course.expiryDate && (
+                            <Text>⏳ Expires: {formatDate(course.expiryDate)}</Text>
+                        )}
                     </HStack>
 
                     {/* Action Button */}
@@ -230,6 +279,7 @@ const StudentCourses = () => {
                             bg: useColorModeValue('gray.800', 'gray.600'),
                         }}
                         w="full"
+                        onClick={() => handleContinueLearning(course.id)}
                     >
                         {course.status === 'completed' ? 'Review Course' : 'Continue Learning'}
                     </Button>
@@ -237,6 +287,24 @@ const StudentCourses = () => {
             </CardBody>
         </Card>
     )
+
+    // Loading state
+    if (loading) {
+        return (
+            <Flex minH="100vh" bg={bgColor}>
+                <Sidebar />
+                <Box flex={1}>
+                    <StudentNavbar />
+                    <Flex h="80vh" align="center" justify="center">
+                        <VStack spacing={4}>
+                            <Spinner size="xl" color="primary.500" thickness="4px" />
+                            <Text color={mutedColor}>Loading your courses...</Text>
+                        </VStack>
+                    </Flex>
+                </Box>
+            </Flex>
+        )
+    }
 
     return (
         <Flex minH="100vh" bg={bgColor}>
@@ -270,7 +338,7 @@ const StudentCourses = () => {
                                 <CardBody>
                                     <VStack align="stretch" spacing={2}>
                                         <Heading size="md" color="primary.500">
-                                            {allCourses.length}
+                                            {courses.length}
                                         </Heading>
                                         <Text fontSize="sm" color={mutedColor}>
                                             Total Courses
@@ -377,11 +445,23 @@ const StudentCourses = () => {
                                                 fontWeight="semibold"
                                                 color={textColor}
                                             >
-                                                No courses found
+                                                {courses.length === 0
+                                                    ? 'No courses enrolled yet'
+                                                    : 'No courses found'}
                                             </Text>
                                             <Text color={mutedColor}>
-                                                Try adjusting your search or filter
+                                                {courses.length === 0
+                                                    ? 'Start your learning journey by enrolling in a course'
+                                                    : 'Try adjusting your search or filter'}
                                             </Text>
+                                            {courses.length === 0 && (
+                                                <Button
+                                                    colorScheme="yellow"
+                                                    onClick={() => navigate('/courses')}
+                                                >
+                                                    Browse Courses
+                                                </Button>
+                                            )}
                                         </VStack>
                                     </CardBody>
                                 </Card>
@@ -411,12 +491,27 @@ const StudentCourses = () => {
                                                         'gray.800'
                                                     )}
                                                     rounded="xl"
-                                                    display="flex"
-                                                    alignItems="center"
-                                                    justifyContent="center"
-                                                    fontSize="5xl"
+                                                    overflow="hidden"
                                                 >
-                                                    {activeCourses[0].icon}
+                                                    {activeCourses[0].thumbnail ? (
+                                                        <Image
+                                                            src={activeCourses[0].thumbnail}
+                                                            alt={activeCourses[0].title}
+                                                            w="100%"
+                                                            h="100%"
+                                                            objectFit="cover"
+                                                        />
+                                                    ) : (
+                                                        <Flex
+                                                            w="100%"
+                                                            h="100%"
+                                                            align="center"
+                                                            justify="center"
+                                                            fontSize="5xl"
+                                                        >
+                                                            📚
+                                                        </Flex>
+                                                    )}
                                                 </Box>
 
                                                 <VStack flex={1} align="stretch" spacing={4}>
@@ -486,6 +581,7 @@ const StudentCourses = () => {
                                                         _hover={{
                                                             bg: 'primary.400',
                                                         }}
+                                                        onClick={() => handleContinueLearning(activeCourses[0].id)}
                                                     >
                                                         Continue Learning
                                                     </Button>
