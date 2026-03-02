@@ -1,574 +1,369 @@
-import { useState, useEffect } from "react";
 import {
     Box,
     Flex,
+    Heading,
+    Text,
     VStack,
     HStack,
-    Text,
-    Heading,
-    Button,
-    useColorModeValue,
+    Grid,
+    SimpleGrid,
     Card,
     CardBody,
-    CardHeader,
-    Image,
-    Modal,
-    ModalOverlay,
-    ModalContent,
-    ModalHeader,
-    ModalBody,
-    ModalFooter,
-    ModalCloseButton,
-    useDisclosure,
-    Textarea,
-    useToast,
-    Spinner,
-    Tabs,
-    TabList,
-    TabPanels,
-    Tab,
-    TabPanel,
-    Divider,
-    SimpleGrid,
+    useColorModeValue,
+    Icon,
+    Badge,
     Breadcrumb,
     BreadcrumbItem,
     BreadcrumbLink,
 } from "@chakra-ui/react";
-import { Link as RouterLink, useNavigate } from "react-router-dom";
-import { courseAPI } from "../../services/courseService";
-import CourseStatusBadge from "../../components/CourseStatusBadge";
+import { ChevronRightIcon } from "@chakra-ui/icons";
+import { useNavigate, Link } from "react-router-dom";
+import AdminNavbar from "../../components/admin/AdminNavbar";
+import AdminSidebar from "../../components/admin/AdminSidebar";
 import { useAuth } from "../../context/AuthContext";
 
+// Custom Icons
+const PersonAddIcon = (props) => (
+    <Icon viewBox="0 0 24 24" {...props}>
+        <path
+            fill="currentColor"
+            d="M15,14C12.33,14 7,15.33 7,18V20H23V18C23,15.33 17.67,14 15,14M6,10V7H4V10H1V12H4V15H6V12H9V10M15,12A4,4 0 0,0 19,8A4,4 0 0,0 15,4A4,4 0 0,0 11,8A4,4 0 0,0 15,12Z"
+        />
+    </Icon>
+);
+
+const ManageAccountsIcon = (props) => (
+    <Icon viewBox="0 0 24 24" {...props}>
+        <path
+            fill="currentColor"
+            d="M10 4A4 4 0 0 0 6 8A4 4 0 0 0 10 12A4 4 0 0 0 14 8A4 4 0 0 0 10 4M17 12C16.87 12 16.76 12.09 16.74 12.21L16.55 13.53C16.25 13.66 15.96 13.82 15.7 14L14.46 13.5C14.35 13.5 14.22 13.5 14.15 13.63L13.15 15.36C13.09 15.47 13.11 15.6 13.21 15.68L14.27 16.5C14.25 16.67 14.24 16.83 14.24 17C14.24 17.17 14.25 17.33 14.27 17.5L13.21 18.32C13.12 18.4 13.09 18.53 13.15 18.64L14.15 20.37C14.21 20.5 14.35 20.5 14.46 20.5L15.7 20C15.96 20.18 16.24 20.35 16.55 20.47L16.74 21.79C16.76 21.91 16.86 22 17 22H19C19.11 22 19.22 21.91 19.24 21.79L19.43 20.47C19.73 20.34 20 20.18 20.27 20L21.5 20.5C21.63 20.5 21.76 20.5 21.83 20.37L22.83 18.64C22.89 18.53 22.86 18.4 22.77 18.32L21.7 17.5C21.72 17.33 21.74 17.17 21.74 17C21.74 16.83 21.73 16.67 21.7 16.5L22.76 15.68C22.85 15.6 22.88 15.47 22.82 15.36L21.82 13.63C21.76 13.5 21.63 13.5 21.5 13.5L20.27 14C20 13.82 19.73 13.65 19.42 13.53L19.23 12.21C19.22 12.09 19.11 12 19 12H17M10 14C5.58 14 2 15.79 2 18V20H11.68A7 7 0 0 1 11 17A7 7 0 0 1 11.64 14.09C11.11 14.03 10.56 14 10 14M18 15.5C18.83 15.5 19.5 16.17 19.5 17C19.5 17.83 18.83 18.5 18 18.5C17.16 18.5 16.5 17.83 16.5 17C16.5 16.17 17.17 15.5 18 15.5Z"
+        />
+    </Icon>
+);
+
+const ChartIcon = (props) => (
+    <Icon viewBox="0 0 24 24" {...props}>
+        <path
+            fill="currentColor"
+            d="M16,11.78L20.24,4.45L21.97,5.45L16.74,14.5L10.23,10.75L5.46,19H22V21H2V3H4V17.54L9.5,8L16,11.78Z"
+        />
+    </Icon>
+);
+
+const PercentIcon = (props) => (
+    <Icon viewBox="0 0 24 24" {...props}>
+        <path
+            fill="currentColor"
+            d="M18.5,3.5L3.5,18.5L5.5,20.5L20.5,5.5M7,4A3,3 0 0,0 4,7A3,3 0 0,0 7,10A3,3 0 0,0 10,7A3,3 0 0,0 7,4M17,14A3,3 0 0,0 14,17A3,3 0 0,0 17,20A3,3 0 0,0 20,17A3,3 0 0,0 17,14Z"
+        />
+    </Icon>
+);
+
+const ArrowForwardIcon = (props) => (
+    <Icon viewBox="0 0 24 24" {...props}>
+        <path
+            fill="currentColor"
+            d="M12,4L10.59,5.41L16.17,11H4V13H16.17L10.59,18.59L12,20L20,12L12,4Z"
+        />
+    </Icon>
+);
+
+const CalendarIcon = (props) => (
+    <Icon viewBox="0 0 24 24" {...props}>
+        <path
+            fill="currentColor"
+            d="M19,19H5V8H19M16,1V3H8V1H6V3H5C3.89,3 3,3.89 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5C21,3.89 20.1,3 19,3H18V1"
+        />
+    </Icon>
+);
+
+const DashboardShortcutIcon = (props) => (
+    <Icon viewBox="0 0 24 24" {...props}>
+        <path
+            fill="currentColor"
+            d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"
+        />
+    </Icon>
+);
+
+const WalletIcon = (props) => (
+    <Icon viewBox="0 0 24 24" {...props}>
+        <path
+            fill="currentColor"
+            d="M21 7H3a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h18a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2m0 10H3V9h18v8M16 13a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3M20 5H4V3h16v2Z"
+        />
+    </Icon>
+);
+
 const AdminDashboard = () => {
-    const toast = useToast();
     const navigate = useNavigate();
-    const { logout } = useAuth();
+    const { user } = useAuth();
 
-    const handleLogout = async () => {
-        await logout();
-        navigate("/", { replace: true });
-    };
-
-    const [pendingCourses, setPendingCourses] = useState([]);
-    const [allCourses, setAllCourses] = useState([]);
-    const [selectedCourse, setSelectedCourse] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [processing, setProcessing] = useState(false);
-    const [rejectNote, setRejectNote] = useState("");
-
-    const {
-        isOpen: isApproveOpen,
-        onOpen: onApproveOpen,
-        onClose: onApproveClose
-    } = useDisclosure();
-
-    const {
-        isOpen: isRejectOpen,
-        onOpen: onRejectOpen,
-        onClose: onRejectClose
-    } = useDisclosure();
-
-    const {
-        isOpen: isDetailOpen,
-        onOpen: onDetailOpen,
-        onClose: onDetailClose
-    } = useDisclosure();
-
-    const bgColor = useColorModeValue("#f8f8f5", "#0A1926");
-    const cardBg = useColorModeValue("white", "rgba(30, 41, 59, 0.5)");
-    const textColor = useColorModeValue("gray.900", "white");
+    // Color mode values
+    const bgColor = useColorModeValue("#f8f8f5", "gray.900");
+    const cardBg = useColorModeValue("white", "gray.800");
+    const borderColor = useColorModeValue("gray.100", "gray.700");
+    const textColor = useColorModeValue("brand.dark", "white");
     const mutedColor = useColorModeValue("gray.500", "gray.400");
+    const hoverShadow = useColorModeValue("xl", "dark-lg");
 
-    // Fetch pending courses
-    const fetchPendingCourses = async () => {
-        try {
-            const data = await courseAPI.getPendingCourses();
-            setPendingCourses(data || []);
-        } catch (error) {
-            console.error("Error fetching pending courses:", error);
-            toast({
-                title: "Lỗi",
-                description: error.message || "Không tải được danh sách chờ duyệt",
-                status: "error",
-                duration: 3000,
-            });
-        }
-    };
+    // Stats data
+    const stats = [
+        { label: "Active Users", value: "12,403", borderColor: "primary.500" },
+        { label: "New Signups", value: "+128", borderColor: "primary.400" },
+        { label: "Total Classes", value: "892", borderColor: "primary.300" },
+        { label: "Pending Approvals", value: "14", borderColor: "primary.200" },
+    ];
 
-    // Fetch all courses with status filter
-    const fetchAllCourses = async (status = null) => {
-        try {
-            const filters = status ? { status } : {};
-            const data = await courseAPI.getCourses(filters);
-            setAllCourses(data || []);
-        } catch (error) {
-            console.error("Error fetching courses:", error);
-            toast({
-                title: "Error",
-                description: error.message || "Không tải được danh sách khóa học",
-                status: "error",
-                duration: 3000,
-            });
-        }
-    };
+    // Feature cards data
+    const featureCards = [
+        {
+            title: "Instructors Management",
+            description:
+                "Review pending applications, verify certifications, and onboard new teachers to the platform.",
+            icon: PersonAddIcon,
+            link: "/admin/instructors",
+            linkText: "Go to Approvals",
+            badge: { text: "14 Pending", colorScheme: "red" },
+        },
+        {
+            title: "Students Management",
+            description:
+                "Update user details, manage enrollments, handle suspensions, and reset student credentials.",
+            icon: ManageAccountsIcon,
+            link: "/admin/students",
+            linkText: "View Student List",
+        },
+        {
+            title: "Course Approvals",
+            description:
+                "Review pending course submissions, approve or reject new courses, and manage course categories.",
+            icon: PercentIcon,
+            link: "/admin/fees",
+            linkText: "Configure Pricing",
+        },
+        {
+            title: "Revenue Tracking",
+            description:
+                "Monitor earnings, transactions, platform performance, and financial insights.",
+            icon: ChartIcon,
+            link: "/admin/revenue",
+            linkText: "View Revenue",
+        },
+        {
+            title: "Instructor Payroll",
+            description:
+                "Track payout requests, confirm payments, and monitor payout history.",
+            icon: WalletIcon,
+            link: "/admin/instructor-payroll",
+            linkText: "Manage Payroll",
+        },
+    ];
 
-    useEffect(() => {
-        const loadData = async () => {
-            setLoading(true);
-            await Promise.all([
-                fetchPendingCourses(),
-                fetchAllCourses(),
-            ]);
-            setLoading(false);
-        };
-        loadData();
-    }, []);
-
-    // Handle approve course
-    const handleApprove = async () => {
-        if (!selectedCourse) return;
-
-        try {
-            setProcessing(true);
-            await courseAPI.approveCourse(selectedCourse.courseId);
-
-            toast({
-                title: "Thành công",
-                description: "Đã duyệt khóa học",
-                status: "success",
-                duration: 3000,
-            });
-
-            onApproveClose();
-            setSelectedCourse(null);
-            await Promise.all([
-                fetchPendingCourses(),
-                fetchAllCourses(),
-            ]);
-        } catch (error) {
-            console.error("Error approving course:", error);
-            toast({
-                title: "Error",
-                description: error.message || "Duyệt khóa học thất bại",
-                status: "error",
-                duration: 3000,
-            });
-        } finally {
-            setProcessing(false);
-        }
-    };
-
-    // Handle reject course
-    const handleReject = async () => {
-        if (!selectedCourse || !rejectNote.trim()) {
-            toast({
-                title: "Cần bổ sung",
-                description: "Vui lòng nhập lý do từ chối",
-                status: "warning",
-                duration: 3000,
-            });
-            return;
-        }
-
-        try {
-            setProcessing(true);
-            await courseAPI.rejectCourse(selectedCourse.courseId, rejectNote);
-
-            toast({
-                title: "Thành công",
-                description: "Đã từ chối khóa học",
-                status: "success",
-                duration: 3000,
-            });
-
-            onRejectClose();
-            setRejectNote("");
-            setSelectedCourse(null);
-            await Promise.all([
-                fetchPendingCourses(),
-                fetchAllCourses(),
-            ]);
-        } catch (error) {
-            console.error("Error rejecting course:", error);
-            toast({
-                title: "Error",
-                description: error.message || "Từ chối khóa học thất bại",
-                status: "error",
-                duration: 3000,
-            });
-        } finally {
-            setProcessing(false);
-        }
-    };
-
-    const openApproveModal = (course) => {
-        setSelectedCourse(course);
-        onApproveOpen();
-    };
-
-    const openRejectModal = (course) => {
-        setSelectedCourse(course);
-        setRejectNote("");
-        onRejectOpen();
-    };
-
-    const openDetailModal = (course) => {
-        setSelectedCourse(course);
-        onDetailOpen();
-    };
-
-    const CourseCard = ({ course }) => (
-        <Card
-            bg={cardBg}
-            border="1px"
-            borderColor={useColorModeValue("gray.200", "gray.700")}
-            borderRadius="xl"
-            overflow="hidden"
-            _hover={{
-                boxShadow: "lg",
-                transform: "translateY(-2px)",
-            }}
-            transition="all 0.2s"
-        >
-            <CardHeader pb={2}>
-                <Flex justify="space-between" align="start">
-                    <VStack align="start" spacing={2} flex={1}>
-                        <Heading size="md" color={textColor} noOfLines={2}>
-                            {course.title}
-                        </Heading>
-                        <Text fontSize="sm" color={mutedColor}>
-                            Instructor: {course.instructor?.fullName || "—"}
-                        </Text>
-                    </VStack>
-                    <CourseStatusBadge status={course.status} />
-                </Flex>
-            </CardHeader>
-            <CardBody pt={0}>
-                <VStack align="stretch" spacing={4}>
-                    {course.thumbnailUrl && (
-                        <Image
-                            src={course.thumbnailUrl}
-                            alt={course.title}
-                            borderRadius="md"
-                            maxH="200px"
-                            objectFit="cover"
-                        />
-                    )}
-                    <Text fontSize="sm" color={mutedColor} noOfLines={3}>
-                        {course.description || "Chưa có mô tả"}
-                    </Text>
-                    <HStack justify="space-between" fontSize="xs" color={mutedColor}>
-                        <Text>
-                            {course.modules?.length || 0} module
-                        </Text>
-                        <Text>
-                            {course.modules?.reduce((sum, m) => sum + (m._count?.lessons || 0), 0) || 0} bài học
-                        </Text>
-                        <Text>
-                            {new Date(course.createdAt).toLocaleDateString()}
-                        </Text>
-                    </HStack>
-                    {course.status === "pending_review" && (
-                        <HStack spacing={2}>
-                            <Button
-                                colorScheme="green"
-                                size="sm"
-                                flex={1}
-                                onClick={() => openApproveModal(course)}
-                            >
-                                Duyệt
-                            </Button>
-                            <Button
-                                colorScheme="red"
-                                size="sm"
-                                flex={1}
-                                onClick={() => openRejectModal(course)}
-                            >
-                                Từ chối
-                            </Button>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => openDetailModal(course)}
-                            >
-                                Xem chi tiết
-                            </Button>
-                        </HStack>
-                    )}
-                    {course.status !== "pending_review" && (
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => openDetailModal(course)}
-                        >
-                            Xem chi tiết
-                        </Button>
-                    )}
-                </VStack>
-            </CardBody>
-        </Card>
-    );
+    // Get current date
+    const currentDate = new Date().toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+    });
 
     return (
-        <Box bg={bgColor} minH="100vh" p={8}>
-            <VStack spacing={6} align="stretch" maxW="1400px" mx="auto">
-                <Flex justify="space-between" align="center" wrap="wrap" gap={4}>
-                    <Box>
-                        <Breadcrumb fontWeight="medium" color={mutedColor}>
-                            <BreadcrumbItem>
-                                <BreadcrumbLink as={RouterLink} to="/admin/dashboard" color="blue.500">
-                                    Admin
-                                </BreadcrumbLink>
-                            </BreadcrumbItem>
-                            <BreadcrumbItem isCurrentPage>
-                                <BreadcrumbLink href="#" color={mutedColor}>
-                                    Duyệt bài
-                                </BreadcrumbLink>
-                            </BreadcrumbItem>
-                        </Breadcrumb>
-                        <Heading color={textColor} size="xl" mt={2}>
-                            Duyệt bài của Instructor
-                        </Heading>
-                        <Text color={mutedColor}>
-                            Xem và duyệt/từ chối khóa học do instructor gửi lên
+        <Box minH="100vh" bg={bgColor}>
+            {/* Navbar */}
+            <AdminNavbar />
+
+            {/* Sidebar */}
+            <AdminSidebar />
+
+            {/* Main Content */}
+            <Box ml={{ base: 0, md: "256px" }} transition="margin-left 0.3s ease">
+                <Box p={{ base: 6, lg: 10 }} minH="calc(100vh - 64px)">
+                    {/* Header */}
+                    <Flex
+                        direction={{ base: "column", md: "row" }}
+                        justify="space-between"
+                        align={{ base: "flex-start", md: "flex-end" }}
+                        mb={10}
+                        gap={4}
+                    >
+                        <Box>
+                            <Heading size="xl" color={textColor} mb={1}>
+                                Admin Control Center
+                            </Heading>
+                            <Text color={mutedColor}>
+                                Welcome back, {user?.fullName || "Admin"}. Here's your platform
+                                overview.
+                            </Text>
+                        </Box>
+
+                        {/* Date Display */}
+                        <HStack
+                            bg={cardBg}
+                            px={4}
+                            py={2}
+                            rounded="lg"
+                            shadow="sm"
+                            border="1px"
+                            borderColor={borderColor}
+                        >
+                            <CalendarIcon boxSize={4} color={mutedColor} />
+                            <Text fontSize="sm" fontWeight="medium" color={mutedColor}>
+                                {currentDate}
+                            </Text>
+                        </HStack>
+                    </Flex>
+
+                    {/* Stats Cards */}
+                    <SimpleGrid columns={{ base: 2, md: 4 }} spacing={4} mb={8}>
+                        {stats.map((stat, index) => (
+                            <Card
+                                key={index}
+                                bg={cardBg}
+                                shadow="sm"
+                                borderLeftWidth="4px"
+                                borderLeftColor={stat.borderColor}
+                            >
+                                <CardBody p={4}>
+                                    <Text
+                                        fontSize="xs"
+                                        color={mutedColor}
+                                        textTransform="uppercase"
+                                        fontWeight="semibold"
+                                        mb={1}
+                                    >
+                                        {stat.label}
+                                    </Text>
+                                    <Text fontSize="2xl" fontWeight="bold" color={textColor}>
+                                        {stat.value}
+                                    </Text>
+                                </CardBody>
+                            </Card>
+                        ))}
+                    </SimpleGrid>
+
+                    {/* Feature Cards */}
+                    <SimpleGrid columns={{ base: 1, md: 2 }} spacing={{ base: 6, lg: 8 }}>
+                        {featureCards.map((card, index) => {
+                            const IconComponent = card.icon;
+                            return (
+                                <Card
+                                    key={index}
+                                    bg={cardBg}
+                                    shadow="sm"
+                                    border="1px"
+                                    borderColor={borderColor}
+                                    overflow="hidden"
+                                    position="relative"
+                                    transition="all 0.3s"
+                                    cursor="pointer"
+                                    role="group"
+                                    _hover={{
+                                        shadow: hoverShadow,
+                                        transform: "translateY(-2px)",
+                                    }}
+                                    onClick={() => navigate(card.link)}
+                                >
+                                    {/* Background decoration */}
+                                    <Box
+                                        position="absolute"
+                                        top={0}
+                                        right={0}
+                                        w="128px"
+                                        h="128px"
+                                        bg="primary.50"
+                                        borderRadius="full"
+                                        mr="-64px"
+                                        mt="-64px"
+                                        transition="transform 0.5s"
+                                        _groupHover={{ transform: "scale(1.5)" }}
+                                    />
+
+                                    <CardBody p={8} position="relative" zIndex={1}>
+                                        {/* Header with Icon and Badge */}
+                                        <Flex justify="space-between" align="flex-start" mb={6}>
+                                            <Box
+                                                w="64px"
+                                                h="64px"
+                                                bg="primary.500"
+                                                rounded="2xl"
+                                                display="flex"
+                                                alignItems="center"
+                                                justifyContent="center"
+                                                shadow="lg"
+                                                transition="transform 0.3s"
+                                                _groupHover={{
+                                                    transform:
+                                                        index % 2 === 0 ? "rotate(6deg)" : "rotate(-6deg)",
+                                                }}
+                                            >
+                                                <IconComponent boxSize={10} color="brand.dark" />
+                                            </Box>
+                                            {card.badge && (
+                                                <Badge
+                                                    colorScheme={card.badge.colorScheme}
+                                                    fontSize="xs"
+                                                    fontWeight="bold"
+                                                    px={2}
+                                                    py={1}
+                                                    rounded="full"
+                                                >
+                                                    {card.badge.text}
+                                                </Badge>
+                                            )}
+                                        </Flex>
+
+                                        {/* Content */}
+                                        <Heading
+                                            size="md"
+                                            color={textColor}
+                                            mb={2}
+                                            transition="color 0.3s"
+                                            _groupHover={{ color: "primary.600" }}
+                                        >
+                                            {card.title}
+                                        </Heading>
+                                        <Text
+                                            color={mutedColor}
+                                            fontSize="sm"
+                                            mb={8}
+                                            lineHeight="relaxed"
+                                        >
+                                            {card.description}
+                                        </Text>
+
+                                        {/* Link */}
+                                        <HStack
+                                            color={textColor}
+                                            fontWeight="semibold"
+                                            transition="all 0.3s"
+                                            _groupHover={{
+                                                color: "primary.600",
+                                                transform: "translateX(4px)",
+                                            }}
+                                        >
+                                            <Text>{card.linkText}</Text>
+                                            <ArrowForwardIcon boxSize={5} />
+                                        </HStack>
+                                    </CardBody>
+                                </Card>
+                            );
+                        })}
+                    </SimpleGrid>
+
+                    {/* Footer */}
+                    <Box
+                        mt={12}
+                        pt={6}
+                        borderTop="1px"
+                        borderColor={borderColor}
+                        textAlign={{ base: "center", md: "left" }}
+                    >
+                        <Text fontSize="sm" color={mutedColor}>
+                            © 2026 BeeEnglish Platform. All rights reserved.
                         </Text>
                     </Box>
-                    <Button
-                        variant="outline"
-                        colorScheme="red"
-                        size="sm"
-                        onClick={handleLogout}
-                    >
-                        Đăng xuất
-                    </Button>
-                </Flex>
-
-                {loading ? (
-                    <Flex justify="center" align="center" minH="400px">
-                        <Spinner size="xl" />
-                    </Flex>
-                ) : (
-                    <Tabs colorScheme="blue">
-                        <TabList>
-                            <Tab>
-                                Chờ duyệt ({pendingCourses.length})
-                            </Tab>
-                            <Tab>Tất cả khóa học</Tab>
-                        </TabList>
-
-                        <TabPanels>
-                            {/* Pending Review Tab */}
-                            <TabPanel>
-                                {pendingCourses.length === 0 ? (
-                                    <VStack textAlign="center" py={20} spacing={3}>
-                                        <Box
-                                            fontSize="4xl"
-                                            aria-hidden
-                                        >
-                                            📋
-                                        </Box>
-                                        <Text color={mutedColor} fontSize="lg" fontWeight="medium">
-                                            Chưa có bài chờ duyệt
-                                        </Text>
-                                        <Text color={mutedColor} fontSize="sm">
-                                            Khi instructor gửi khóa học lên, bài sẽ hiện tại đây.
-                                        </Text>
-                                    </VStack>
-                                ) : (
-                                    <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={6}>
-                                        {pendingCourses.map((course) => (
-                                            <CourseCard key={course.courseId} course={course} />
-                                        ))}
-                                    </SimpleGrid>
-                                )}
-                            </TabPanel>
-
-                            {/* All Courses Tab */}
-                            <TabPanel>
-                                <VStack spacing={4} align="stretch">
-                                    <HStack spacing={4}>
-                                        <Button
-                                            size="sm"
-                                            variant={allCourses.length === 0 ? "solid" : "outline"}
-                                            onClick={() => fetchAllCourses()}
-                                        >
-                                            Tất cả
-                                        </Button>
-                                        <Button
-                                            size="sm"
-                                            variant="outline"
-                                            onClick={() => fetchAllCourses("pending_review")}
-                                        >
-                                            Chờ duyệt
-                                        </Button>
-                                        <Button
-                                            size="sm"
-                                            variant="outline"
-                                            onClick={() => fetchAllCourses("approved_upload")}
-                                        >
-                                            Đã duyệt
-                                        </Button>
-                                        <Button
-                                            size="sm"
-                                            variant="outline"
-                                            onClick={() => fetchAllCourses("rejected")}
-                                        >
-                                            Từ chối
-                                        </Button>
-                                        <Button
-                                            size="sm"
-                                            variant="outline"
-                                            onClick={() => fetchAllCourses("published")}
-                                        >
-                                            Đã xuất bản
-                                        </Button>
-                                    </HStack>
-                                    {allCourses.length === 0 ? (
-                                        <VStack textAlign="center" py={20} spacing={3}>
-                                            <Box fontSize="4xl" aria-hidden>
-                                                📚
-                                            </Box>
-                                            <Text color={mutedColor} fontSize="lg">
-                                                Không có khóa học
-                                            </Text>
-                                        </VStack>
-                                    ) : (
-                                        <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={6}>
-                                            {allCourses.map((course) => (
-                                                <CourseCard key={course.courseId} course={course} />
-                                            ))}
-                                        </SimpleGrid>
-                                    )}
-                                </VStack>
-                            </TabPanel>
-                        </TabPanels>
-                    </Tabs>
-                )}
-
-                {/* Approve Modal */}
-                <Modal isOpen={isApproveOpen} onClose={onApproveClose} isCentered>
-                    <ModalOverlay />
-                    <ModalContent>
-                        <ModalHeader>Duyệt khóa học</ModalHeader>
-                        <ModalCloseButton />
-                        <ModalBody>
-                            <Text>
-                                Bạn chắc chắn muốn duyệt "{selectedCourse?.title}"?
-                            </Text>
-                        </ModalBody>
-                        <ModalFooter>
-                            <Button variant="ghost" mr={3} onClick={onApproveClose}>
-                                Hủy
-                            </Button>
-                            <Button
-                                colorScheme="green"
-                                onClick={handleApprove}
-                                isLoading={processing}
-                            >
-                                Duyệt
-                            </Button>
-                        </ModalFooter>
-                    </ModalContent>
-                </Modal>
-
-                {/* Reject Modal */}
-                <Modal isOpen={isRejectOpen} onClose={onRejectClose} isCentered size="lg">
-                    <ModalOverlay />
-                    <ModalContent>
-                        <ModalHeader>Từ chối khóa học</ModalHeader>
-                        <ModalCloseButton />
-                        <ModalBody>
-                            <VStack spacing={4} align="stretch">
-                                <Text>
-                                    Nhập lý do từ chối "{selectedCourse?.title}":
-                                </Text>
-                                <Textarea
-                                    value={rejectNote}
-                                    onChange={(e) => setRejectNote(e.target.value)}
-                                    placeholder="Lý do từ chối (bắt buộc)..."
-                                    rows={5}
-                                />
-                            </VStack>
-                        </ModalBody>
-                        <ModalFooter>
-                            <Button variant="ghost" mr={3} onClick={onRejectClose}>
-                                Hủy
-                            </Button>
-                            <Button
-                                colorScheme="red"
-                                onClick={handleReject}
-                                isLoading={processing}
-                                isDisabled={!rejectNote.trim()}
-                            >
-                                Từ chối
-                            </Button>
-                        </ModalFooter>
-                    </ModalContent>
-                </Modal>
-
-                {/* Course Detail Modal */}
-                <Modal isOpen={isDetailOpen} onClose={onDetailClose} size="xl" scrollBehavior="inside">
-                    <ModalOverlay />
-                    <ModalContent>
-                        <ModalHeader>
-                            <VStack align="start" spacing={2}>
-                                <Text>{selectedCourse?.title}</Text>
-                                <CourseStatusBadge status={selectedCourse?.status} />
-                            </VStack>
-                        </ModalHeader>
-                        <ModalCloseButton />
-                        <ModalBody>
-                            {selectedCourse && (
-                                <VStack spacing={4} align="stretch">
-                                    <Box>
-                                        <Text fontWeight="bold" mb={2}>Mô tả</Text>
-                                        <Text color={mutedColor}>
-                                            {selectedCourse.description || "Chưa có mô tả"}
-                                        </Text>
-                                    </Box>
-                                    <Divider />
-                                    <Box>
-                                        <Text fontWeight="bold" mb={2}>Instructor</Text>
-                                        <Text color={mutedColor}>
-                                            {selectedCourse.instructor?.fullName || "—"}
-                                        </Text>
-                                    </Box>
-                                    <Divider />
-                                    <Box>
-                                        <Text fontWeight="bold" mb={2}>Cấu trúc khóa học</Text>
-                                        <VStack align="stretch" spacing={2}>
-                                            {selectedCourse.modules?.map((module, idx) => (
-                                                <Box key={module.moduleId || idx} pl={4} borderLeft="2px" borderColor="blue.200">
-                                                    <Text fontWeight="medium">{module.title}</Text>
-                                                    <Text fontSize="sm" color={mutedColor}>
-                                                        {module._count?.lessons || 0} bài học
-                                                    </Text>
-                                                </Box>
-                                            ))}
-                                        </VStack>
-                                    </Box>
-                                    {selectedCourse.adminNote && (
-                                        <>
-                                            <Divider />
-                                            <Box>
-                                                <Text fontWeight="bold" mb={2} color="red.500">
-                                                    Ghi chú admin (lý do từ chối)
-                                                </Text>
-                                                <Text color={mutedColor}>
-                                                    {selectedCourse.adminNote}
-                                                </Text>
-                                            </Box>
-                                        </>
-                                    )}
-                                </VStack>
-                            )}
-                        </ModalBody>
-                        <ModalFooter>
-                            <Button onClick={onDetailClose}>Đóng</Button>
-                        </ModalFooter>
-                    </ModalContent>
-                </Modal>
-            </VStack>
+                </Box>
+            </Box>
         </Box>
     );
 };

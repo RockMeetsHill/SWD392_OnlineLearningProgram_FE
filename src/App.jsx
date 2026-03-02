@@ -1,20 +1,24 @@
-import './App.css'
-import { Routes, Route, Navigate, useParams } from 'react-router-dom'
-import Home from './pages/guest/Home'
-import Login from './pages/guest/Login'
-import Signup from './pages/guest/Signup'
-import CourseSearch from './pages/guest/CourseSearch'
-import CourseDetail from './pages/guest/CourseDetail'
-import SignUpSuccess from './pages/guest/SignUpSuccess'
-import PaymentSuccess from './pages/student/PaymentSuccess'
-import PaymentCallback from './pages/student/PaymentCallback'
-import StudentDashboard from './pages/student/Dashboard'
-import StudentCourses from './pages/student/StudentCourses'
-import StudentCourseLearn from './pages/student/StudentCourseLearn'
-import Profile from './pages/student/Profile'
-import InstructorDashboard from './pages/instructor/Dashboard'
-import AdminDashboard from './pages/admin/Dashboard'
-import Payment from './pages/student/Payment'
+import "./App.css";
+import { Routes, Route } from "react-router-dom";
+import Home from "./pages/guest/Home";
+import Login from "./pages/guest/Login";
+import Signup from "./pages/guest/Signup";
+import CourseSearch from "./pages/guest/CourseSearch";
+import CourseDetail from "./pages/guest/CourseDetail";
+import SignUpSuccess from "./pages/guest/SignUpSuccess";
+import PaymentSuccess from "./pages/student/PaymentSuccess";
+import PaymentCallback from "./pages/student/PaymentCallback";
+import StudentDashboard from "./pages/student/Dashboard";
+import StudentCourses from "./pages/student/StudentCourses";
+import Profile from "./pages/student/Profile";
+import InstructorDashboard from "./pages/instructor/Dashboard";
+import Payment from "./pages/student/Payment";
+import AdminDashboard from "./pages/admin/Dashboard";
+import RevenueTracking from "./pages/admin/RevenueTracking";
+import InstructorManagement from "./pages/admin/InstructorManagement";
+import InstructorPayroll from "./pages/admin/InstructorPayroll";
+import CourseApprovals from "./pages/admin/CourseApprovals";
+import CourseApprovalDetails from "./pages/admin/CourseApprovalDetails";
 import Cart from './pages/student/Cart'
 import ProtectedRoute from './components/ProtectedRoute'
 
@@ -24,7 +28,6 @@ function RedirectStudentCourseToLearn() {
 }
 
 function App() {
-
   return (
     <Routes>
       <Route path="/" element={<Home />} />
@@ -47,20 +50,20 @@ function App() {
       <Route path="/student/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
 
       {/* Instructor Routes */}
-      <Route path="/instructor/dashboard" element={
-        <ProtectedRoute allowedRoles={['instructor', 'admin']}>
-          <InstructorDashboard />
-        </ProtectedRoute>
-      } />
+      <Route path="/instructor/dashboard" element={<InstructorDashboard />} />
 
       {/* Admin Routes */}
-      <Route path="/admin/dashboard" element={
-        <ProtectedRoute allowedRoles={['admin']}>
-          <AdminDashboard />
-        </ProtectedRoute>
-      } />
+      <Route path="/admin/dashboard" element={<AdminDashboard />} />
+      <Route path="/admin/revenue" element={<RevenueTracking />} />
+      <Route
+        path="/admin/manage/instructors"
+        element={<InstructorManagement />}
+      />
+      <Route path="/admin/instructor-payroll" element={<InstructorPayroll />} />
+      <Route path="/admin/course-approvals" element={<CourseApprovals />} />
+      <Route path="/admin/course-approvals/:id" element={<CourseApprovalDetails />} />
     </Routes>
-  )
+  );
 }
 
-export default App
+export default App;
