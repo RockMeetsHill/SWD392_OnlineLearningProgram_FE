@@ -23,7 +23,7 @@ import {
     ArrowForwardIcon,
     ViewIcon,
 } from "@chakra-ui/icons";
-import { courseAPI } from "../../services/courseService";
+import { courseAPI } from "../../services/courseServiceOld";
 import { paymentAPI } from "../../services/paymentService";
 
 const PaymentSuccess = () => {

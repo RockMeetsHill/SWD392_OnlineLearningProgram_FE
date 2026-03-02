@@ -19,7 +19,8 @@ import InstructorManagement from "./pages/admin/InstructorManagement";
 import InstructorPayroll from "./pages/admin/InstructorPayroll";
 import CourseApprovals from "./pages/admin/CourseApprovals";
 import CourseApprovalDetails from "./pages/admin/CourseApprovalDetails";
-
+import Cart from './pages/student/Cart'
+import StudentCourseLearn from './pages/student/samples/StudentCourseLearnSample'
 function App() {
   return (
     <Routes>
@@ -29,7 +30,7 @@ function App() {
       <Route path="/courses" element={<CourseSearch />} />
       <Route path="/courses/:id" element={<CourseDetail />} />
       <Route path="/register/success" element={<SignUpSuccess />} />
-
+      <Route path="/cart" element={<Cart />} />
       {/* Payment Routes */}
       <Route path="/student/payment" element={<Payment />} />
       <Route path="/student/payment/success" element={<PaymentSuccess />} />
@@ -39,7 +40,7 @@ function App() {
       <Route path="/student/dashboard" element={<StudentDashboard />} />
       <Route path="/student/courses" element={<StudentCourses />} />
       <Route path="/student/profile" element={<Profile />} />
-
+      <Route path="/student/courses/:courseId/learn" element={<StudentCourseLearn />} />
       {/* Instructor Routes */}
       <Route path="/instructor/dashboard" element={<InstructorDashboard />} />
 

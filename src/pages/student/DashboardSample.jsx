@@ -144,7 +144,7 @@ const Dashboard = () => {
 
     // Handle course navigation
     const handleContinueLearning = (courseId) => {
-        navigate(`/student/courses/${courseId}/learn`)
+        navigate(`/student/courses/${courseId}`)
     }
 
     // Loading state
