@@ -20,7 +20,13 @@ import InstructorPayroll from "./pages/admin/InstructorPayroll";
 import CourseApprovals from "./pages/admin/CourseApprovals";
 import CourseApprovalDetails from "./pages/admin/CourseApprovalDetails";
 import Cart from './pages/student/Cart'
-import StudentCourseLearn from './pages/student/samples/StudentCourseLearnSample'
+import ProtectedRoute from './components/ProtectedRoute'
+
+function RedirectStudentCourseToLearn() {
+  const { courseId } = useParams()
+  return <Navigate to={`/student/courses/${courseId}/learn`} replace />
+}
+
 function App() {
   return (
     <Routes>
@@ -32,15 +38,17 @@ function App() {
       <Route path="/register/success" element={<SignUpSuccess />} />
       <Route path="/cart" element={<Cart />} />
       {/* Payment Routes */}
-      <Route path="/student/payment" element={<Payment />} />
-      <Route path="/student/payment/success" element={<PaymentSuccess />} />
+      <Route path="/student/payment" element={<ProtectedRoute><Payment /></ProtectedRoute>} />
+      <Route path="/student/payment/success" element={<ProtectedRoute><PaymentSuccess /></ProtectedRoute>} />
       <Route path="/payments/callback" element={<PaymentCallback />} />
 
       {/* Student Routes */}
-      <Route path="/student/dashboard" element={<StudentDashboard />} />
-      <Route path="/student/courses" element={<StudentCourses />} />
-      <Route path="/student/profile" element={<Profile />} />
-      <Route path="/student/courses/:courseId/learn" element={<StudentCourseLearn />} />
+      <Route path="/student/dashboard" element={<ProtectedRoute><StudentDashboard /></ProtectedRoute>} />
+      <Route path="/student/courses" element={<ProtectedRoute><StudentCourses /></ProtectedRoute>} />
+      <Route path="/student/courses/:courseId" element={<ProtectedRoute><RedirectStudentCourseToLearn /></ProtectedRoute>} />
+      <Route path="/student/courses/:courseId/learn" element={<ProtectedRoute><StudentCourseLearn /></ProtectedRoute>} />
+      <Route path="/student/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+
       {/* Instructor Routes */}
       <Route path="/instructor/dashboard" element={<InstructorDashboard />} />
 
