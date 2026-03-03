@@ -21,6 +21,7 @@ import CourseApprovals from "./pages/admin/CourseApprovals";
 import CourseApprovalDetails from "./pages/admin/CourseApprovalDetails";
 import Cart from './pages/student/Cart'
 import ProtectedRoute from './components/ProtectedRoute'
+import StudentCourseLearn from "./pages/student/StudentCourseLearn";
 
 function RedirectStudentCourseToLearn() {
   const { courseId } = useParams()
