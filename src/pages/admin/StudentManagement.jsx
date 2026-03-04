@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   Box,
   Flex,
@@ -7,8 +7,8 @@ import {
   Input,
   InputGroup,
   InputLeftElement,
+  Select,
   Button,
-  IconButton,
   Table,
   Thead,
   Tbody,
@@ -17,773 +17,566 @@ import {
   Td,
   Badge,
   Avatar,
-  Menu,
-  MenuButton,
-  MenuList,
-  MenuItem,
-  Select,
+  Switch,
+  IconButton,
   HStack,
-  VStack,
-  useDisclosure,
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
-  ModalCloseButton,
-  FormControl,
-  FormLabel,
   useToast,
+  useDisclosure,
+  Spinner,
+  Center,
+  AlertDialog,
+  AlertDialogBody,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogContent,
+  AlertDialogOverlay,
 } from "@chakra-ui/react";
-import {
-  SearchIcon,
-  AddIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon,
-} from "@chakra-ui/icons";
-import {
-  FiMoreVertical,
-  FiEdit2,
-  FiTrash2,
-  FiEye,
-  FiFilter,
-  FiArrowUp,
-  FiArrowDown,
-} from "react-icons/fi";
+import { SearchIcon, DeleteIcon } from "@chakra-ui/icons";
+import AdminNavbar from "../../components/admin/AdminNavbar";
+import AdminSidebar from "../../components/admin/AdminSidebar";
+import StudentInfoModal from "../../components/admin/StudentInfoModal";
+import { studentAPI } from "../../services/admin/studentManagementService";
 
-// Mock data
-const initialStudents = [
-  {
-    id: "ST-2023-001",
-    name: "Emma Watson",
-    email: "emma.watson@example.com",
-    phone: "+1 (555) 123-4567",
-    joinedDate: "Oct 24, 2023",
-    status: "Active",
-    avatar: "https://i.pravatar.cc/150?img=1",
-  },
-  {
-    id: "ST-2023-042",
-    name: "John Doe",
-    email: "john.doe@example.com",
-    phone: "+1 (555) 987-6543",
-    joinedDate: "Sep 15, 2023",
-    status: "Active",
-    avatar: "https://i.pravatar.cc/150?img=3",
-  },
-  {
-    id: "ST-2023-089",
-    name: "Sophia Lee",
-    email: "sophia.l@example.com",
-    phone: "+1 (555) 234-5678",
-    joinedDate: "Aug 02, 2023",
-    status: "Inactive",
-    avatar: "https://i.pravatar.cc/150?img=5",
-  },
-  {
-    id: "ST-2023-104",
-    name: "Michael Chen",
-    email: "m.chen@example.com",
-    phone: "+1 (555) 876-5432",
-    joinedDate: "Jul 19, 2023",
-    status: "Blocked",
-    avatar: "https://i.pravatar.cc/150?img=8",
-  },
-  {
-    id: "ST-2023-112",
-    name: "Ava Johnson",
-    email: "ava.j@example.com",
-    phone: "+1 (555) 345-6789",
-    joinedDate: "Jun 10, 2023",
-    status: "Active",
-    avatar: "https://i.pravatar.cc/150?img=9",
-  },
-];
-
-const statusColorMap = {
-  Active: "green",
-  Inactive: "gray",
-  Blocked: "red",
+const statusColors = {
+  active: { bg: "green.100", color: "green.800" },
+  inactive: { bg: "red.100", color: "red.800" },
 };
 
-const StudentManagement = () => {
-  const [students, setStudents] = useState(initialStudents);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("All");
-  const [sortField, setSortField] = useState("name");
-  const [sortOrder, setSortOrder] = useState("asc");
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 5;
+const avatarBgColors = [
+  "blue.100",
+  "orange.100",
+  "pink.100",
+  "teal.100",
+  "purple.100",
+];
 
-  const { isOpen, onOpen, onClose } = useDisclosure();
+const StudentManagement = () => {
+  const [students, setStudents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [viewStudent, setViewStudent] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [togglingStatus, setTogglingStatus] = useState(null);
+
+  const itemsPerPage = 5;
+  const toast = useToast();
   const {
     isOpen: isDeleteOpen,
     onOpen: onDeleteOpen,
     onClose: onDeleteClose,
   } = useDisclosure();
-  const [selectedStudent, setSelectedStudent] = useState(null);
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    status: "Active",
-  });
-  const [isEditing, setIsEditing] = useState(false);
+  const {
+    isOpen: isViewOpen,
+    onOpen: onViewOpen,
+    onClose: onViewClose,
+  } = useDisclosure();
+  const cancelRef = useRef();
 
-  const toast = useToast();
-
-  // Filter & Search
-  const filteredStudents = students.filter((student) => {
-    const matchesSearch =
-      student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      student.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      student.phone.includes(searchTerm);
-    const matchesStatus =
-      statusFilter === "All" || student.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
-
-  // Sort
-  const sortedStudents = [...filteredStudents].sort((a, b) => {
-    const aVal = a[sortField]?.toLowerCase() || "";
-    const bVal = b[sortField]?.toLowerCase() || "";
-    if (sortOrder === "asc") return aVal.localeCompare(bVal);
-    return bVal.localeCompare(aVal);
-  });
-
-  // Pagination
-  const totalPages = Math.ceil(sortedStudents.length / itemsPerPage);
-  const paginatedStudents = sortedStudents.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
-
-  const handleSort = (field) => {
-    if (sortField === field) {
-      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
-    } else {
-      setSortField(field);
-      setSortOrder("asc");
-    }
-  };
-
-  const handleAddNew = () => {
-    setIsEditing(false);
-    setFormData({ name: "", email: "", phone: "", status: "Active" });
-    onOpen();
-  };
-
-  const handleEdit = (student) => {
-    setIsEditing(true);
-    setSelectedStudent(student);
-    setFormData({
-      name: student.name,
-      email: student.email,
-      phone: student.phone,
-      status: student.status,
-    });
-    onOpen();
-  };
-
-  const handleDelete = (student) => {
-    setSelectedStudent(student);
-    onDeleteOpen();
-  };
-
-  const confirmDelete = () => {
-    setStudents(students.filter((s) => s.id !== selectedStudent.id));
-    toast({
-      title: "Student deleted.",
-      description: `${selectedStudent.name} has been removed.`,
-      status: "success",
-      duration: 3000,
-      isClosable: true,
-    });
-    onDeleteClose();
-  };
-
-  const handleSubmit = () => {
-    if (!formData.name || !formData.email) {
+  // Fetch students from API
+  const fetchStudents = async () => {
+    setLoading(true);
+    try {
+      const data = await studentAPI.getAllStudents();
+      setStudents(data);
+    } catch (error) {
       toast({
-        title: "Validation Error",
-        description: "Name and Email are required.",
+        title: "Error fetching students",
+        description: error.message || "Failed to load students.",
         status: "error",
         duration: 3000,
         isClosable: true,
       });
-      return;
+    } finally {
+      setLoading(false);
     }
-
-    if (isEditing) {
-      setStudents(
-        students.map((s) =>
-          s.id === selectedStudent.id ? { ...s, ...formData } : s
-        )
-      );
-      toast({
-        title: "Student updated.",
-        description: `${formData.name} has been updated.`,
-        status: "success",
-        duration: 3000,
-        isClosable: true,
-      });
-    } else {
-      const newStudent = {
-        ...formData,
-        id: `ST-${Date.now()}`,
-        joinedDate: new Date().toLocaleDateString("en-US", {
-          month: "short",
-          day: "2-digit",
-          year: "numeric",
-        }),
-        avatar: `https://i.pravatar.cc/150?img=${Math.floor(Math.random() * 70)}`,
-      };
-      setStudents([newStudent, ...students]);
-      toast({
-        title: "Student added.",
-        description: `${formData.name} has been added.`,
-        status: "success",
-        duration: 3000,
-        isClosable: true,
-      });
-    }
-    onClose();
   };
 
-  const SortIcon = ({ field }) => {
-    if (sortField !== field) return null;
-    return sortOrder === "asc" ? (
-      <FiArrowUp style={{ display: "inline", marginLeft: 4 }} />
-    ) : (
-      <FiArrowDown style={{ display: "inline", marginLeft: 4 }} />
-    );
+  useEffect(() => {
+    fetchStudents();
+  }, []);
+
+  // Filter logic
+  const filteredStudents = students.filter((student) => {
+    const matchesSearch =
+      student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      student.email.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus =
+      statusFilter === "all" ||
+      (statusFilter === "active" && student.isActive) ||
+      (statusFilter === "inactive" && !student.isActive);
+    return matchesSearch && matchesStatus;
+  });
+
+  // Pagination
+  const totalPages = Math.ceil(filteredStudents.length / itemsPerPage);
+  const paginatedStudents = filteredStudents.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage,
+  );
+  const startItem =
+    filteredStudents.length === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1;
+  const endItem = Math.min(currentPage * itemsPerPage, filteredStudents.length);
+
+  // Handlers
+  const handleViewClick = (student) => {
+    setViewStudent(student);
+    onViewOpen();
+  };
+
+  const handleToggleStatus = async (student) => {
+    setTogglingStatus(student.id);
+    try {
+      const updated = await studentAPI.toggleStudentStatus(
+        student.id,
+        student.isActive,
+      );
+      setStudents((prev) =>
+        prev.map((s) => (s.id === student.id ? updated : s)),
+      );
+      toast({
+        title: "Status updated",
+        description: `${student.name} is now ${updated.isActive ? "Active" : "Inactive"}.`,
+        status: "success",
+        duration: 2000,
+        isClosable: true,
+      });
+    } catch (error) {
+      toast({
+        title: "Error updating status",
+        description: error.message || "Failed to update status.",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+    } finally {
+      setTogglingStatus(null);
+    }
+  };
+
+  const handleDeleteClick = (student) => {
+    setDeleteTarget(student);
+    onDeleteOpen();
+  };
+
+  const handleDeleteConfirm = async () => {
+    setIsDeleting(true);
+    try {
+      await studentAPI.deleteStudent(deleteTarget.id);
+      setStudents((prev) => prev.filter((s) => s.id !== deleteTarget.id));
+      toast({
+        title: "Student deleted",
+        description: `${deleteTarget.name} has been removed.`,
+        status: "info",
+        duration: 3000,
+        isClosable: true,
+      });
+      onDeleteClose();
+      setDeleteTarget(null);
+    } catch (error) {
+      toast({
+        title: "Error deleting student",
+        description: error.message || "Failed to delete student.",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   return (
-    <Box bg="#fcfcf8" minH="100vh" p={{ base: 4, md: 8 }}>
-      <Box maxW="6xl" mx="auto">
-        {/* Page Header */}
-        <Flex
-          direction={{ base: "column", md: "row" }}
-          justify="space-between"
-          align={{ base: "flex-start", md: "flex-end" }}
-          mb={6}
-          gap={4}
-        >
-          <Box>
-            <Heading size="lg" color="#0A1926" fontWeight="bold">
-              Student Management
-            </Heading>
-            <Text color="#6b6646" mt={1} fontSize="sm">
-              Manage and view all registered students in the BeeEnglish
-              platform.
-            </Text>
-          </Box>
-          <Button
-            leftIcon={<AddIcon />}
-            bg="#0A1926"
-            color="white"
-            fontWeight="bold"
-            fontSize="sm"
-            _hover={{ bg: "#0A1926", opacity: 0.9 }}
-            onClick={handleAddNew}
-          >
-            Add New Student
-          </Button>
-        </Flex>
-
-        {/* Filters & Search */}
-        <Flex
-          direction={{ base: "column", md: "row" }}
-          gap={4}
-          p={4}
-          bg="white"
-          borderRadius="xl"
-          border="1px solid"
-          borderColor="#e5e5e0"
-          mb={6}
-          align="center"
-          boxShadow="sm"
-        >
-          <InputGroup flex={1}>
-            <InputLeftElement pointerEvents="none">
-              <SearchIcon color="#6b6646" />
-            </InputLeftElement>
-            <Input
-              placeholder="Search by student name, email, or phone..."
-              bg="#fcfcf8"
-              border="1px solid"
-              borderColor="#e5e5e0"
-              fontSize="sm"
-              _focus={{ borderColor: "#fde90d", boxShadow: "0 0 0 1px #fde90d" }}
-              value={searchTerm}
-              onChange={(e) => {
-                setSearchTerm(e.target.value);
-                setCurrentPage(1);
-              }}
-            />
-          </InputGroup>
-
-          <HStack spacing={2} flexShrink={0}>
-            <HStack spacing={1}>
-              <Box as={FiFilter} color="#6b6646" />
-              <Select
-                size="md"
-                bg="#fcfcf8"
-                border="1px solid"
-                borderColor="#e5e5e0"
-                fontSize="sm"
-                fontWeight="medium"
-                w="160px"
-                value={statusFilter}
-                onChange={(e) => {
-                  setStatusFilter(e.target.value);
-                  setCurrentPage(1);
-                }}
-              >
-                <option value="All">Status: All</option>
-                <option value="Active">Active</option>
-                <option value="Inactive">Inactive</option>
-                <option value="Blocked">Blocked</option>
-              </Select>
-            </HStack>
-
-            <Select
-              size="md"
-              bg="#fcfcf8"
-              border="1px solid"
-              borderColor="#e5e5e0"
-              fontSize="sm"
-              fontWeight="medium"
-              w="160px"
-              value={sortField}
-              onChange={(e) => handleSort(e.target.value)}
-            >
-              <option value="name">Sort: Name</option>
-              <option value="email">Sort: Email</option>
-              <option value="joinedDate">Sort: Date</option>
-              <option value="status">Sort: Status</option>
-            </Select>
-          </HStack>
-        </Flex>
-
-        {/* Data Table */}
+    <Box minH="100vh">
+      <AdminNavbar />
+      <Flex>
+        <AdminSidebar />
         <Box
-          bg="white"
-          borderRadius="xl"
-          border="1px solid"
-          borderColor="#e5e5e0"
-          boxShadow="sm"
-          overflow="hidden"
+          flex="1"
+          ml={{ base: 0, md: "256px" }}
+          p={{ base: 4, lg: 10 }}
+          minH="calc(100vh - 64px)"
+          bg="gray.50"
         >
-          <Box overflowX="auto">
-            <Table variant="simple" size="md">
-              <Thead bg="#fcfcf8">
-                <Tr>
-                  <Th
-                    fontSize="xs"
-                    textTransform="uppercase"
-                    color="#6b6646"
-                    letterSpacing="wider"
-                    cursor="pointer"
-                    onClick={() => handleSort("name")}
-                    _hover={{ color: "#0A1926" }}
-                  >
-                    Student Name <SortIcon field="name" />
-                  </Th>
-                  <Th
-                    fontSize="xs"
-                    textTransform="uppercase"
-                    color="#6b6646"
-                    letterSpacing="wider"
-                    cursor="pointer"
-                    onClick={() => handleSort("email")}
-                    _hover={{ color: "#0A1926" }}
-                  >
-                    Email Address <SortIcon field="email" />
-                  </Th>
-                  <Th
-                    fontSize="xs"
-                    textTransform="uppercase"
-                    color="#6b6646"
-                    letterSpacing="wider"
-                  >
-                    Phone Number
-                  </Th>
-                  <Th
-                    fontSize="xs"
-                    textTransform="uppercase"
-                    color="#6b6646"
-                    letterSpacing="wider"
-                    cursor="pointer"
-                    onClick={() => handleSort("joinedDate")}
-                    _hover={{ color: "#0A1926" }}
-                  >
-                    Joined Date <SortIcon field="joinedDate" />
-                  </Th>
-                  <Th
-                    fontSize="xs"
-                    textTransform="uppercase"
-                    color="#6b6646"
-                    letterSpacing="wider"
-                    cursor="pointer"
-                    onClick={() => handleSort("status")}
-                    _hover={{ color: "#0A1926" }}
-                  >
-                    Status <SortIcon field="status" />
-                  </Th>
-                  <Th
-                    fontSize="xs"
-                    textTransform="uppercase"
-                    color="#6b6646"
-                    letterSpacing="wider"
-                    textAlign="right"
-                  >
-                    Action
-                  </Th>
-                </Tr>
-              </Thead>
-              <Tbody>
-                {paginatedStudents.length === 0 ? (
-                  <Tr>
-                    <Td colSpan={6} textAlign="center" py={10}>
-                      <VStack spacing={2}>
-                        <Text fontSize="lg" color="#6b6646" fontWeight="medium">
-                          No students found
-                        </Text>
-                        <Text fontSize="sm" color="#6b6646">
-                          Try adjusting your search or filter criteria.
-                        </Text>
-                      </VStack>
-                    </Td>
-                  </Tr>
-                ) : (
-                  paginatedStudents.map((student) => (
-                    <Tr
-                      key={student.id}
-                      _hover={{ bg: "yellow.50" }}
-                      transition="background 0.15s"
-                      cursor="pointer"
-                    >
-                      <Td>
-                        <HStack spacing={3}>
-                          <Avatar
-                            size="sm"
-                            name={student.name}
-                            src={student.avatar}
-                          />
-                          <Box>
-                            <Text
-                              fontSize="sm"
-                              fontWeight="bold"
-                              color="#0A1926"
-                            >
-                              {student.name}
-                            </Text>
-                            <Text fontSize="xs" color="#6b6646">
-                              ID: #{student.id}
-                            </Text>
-                          </Box>
-                        </HStack>
-                      </Td>
-                      <Td fontSize="sm" color="#1c1b0c">
-                        {student.email}
-                      </Td>
-                      <Td fontSize="sm" color="#1c1b0c">
-                        {student.phone}
-                      </Td>
-                      <Td fontSize="sm" color="#1c1b0c">
-                        {student.joinedDate}
-                      </Td>
-                      <Td>
-                        <Badge
-                          colorScheme={statusColorMap[student.status]}
-                          borderRadius="full"
-                          px={2.5}
-                          py={0.5}
-                          fontSize="xs"
-                          fontWeight="medium"
-                        >
-                          {student.status}
-                        </Badge>
-                      </Td>
-                      <Td textAlign="right">
-                        <Menu>
-                          <MenuButton
-                            as={IconButton}
-                            icon={<FiMoreVertical />}
-                            variant="ghost"
-                            size="sm"
-                            color="#6b6646"
-                            _hover={{ bg: "gray.100", color: "#0A1926" }}
-                            aria-label="Actions"
-                          />
-                          <MenuList
-                            fontSize="sm"
-                            shadow="lg"
-                            borderColor="#e5e5e0"
-                          >
-                            <MenuItem icon={<FiEye />}>View Details</MenuItem>
-                            <MenuItem
-                              icon={<FiEdit2 />}
-                              onClick={() => handleEdit(student)}
-                            >
-                              Edit Student
-                            </MenuItem>
-                            <MenuItem
-                              icon={<FiTrash2 />}
-                              color="red.500"
-                              onClick={() => handleDelete(student)}
-                            >
-                              Delete Student
-                            </MenuItem>
-                          </MenuList>
-                        </Menu>
-                      </Td>
-                    </Tr>
-                  ))
-                )}
-              </Tbody>
-            </Table>
-          </Box>
-
-          {/* Pagination */}
+          {/* Header */}
           <Flex
+            direction={{ base: "column", md: "row" }}
             justify="space-between"
-            align="center"
-            px={6}
-            py={4}
-            borderTop="1px solid"
-            borderColor="#e5e5e0"
+            align={{ base: "flex-start", md: "center" }}
+            mb={8}
+            gap={4}
           >
-            <Text fontSize="sm" color="#6b6646">
-              Showing{" "}
-              <Text as="span" fontWeight="medium" color="#1c1b0c">
-                {sortedStudents.length === 0
-                  ? 0
-                  : (currentPage - 1) * itemsPerPage + 1}
-              </Text>{" "}
-              to{" "}
-              <Text as="span" fontWeight="medium" color="#1c1b0c">
-                {Math.min(currentPage * itemsPerPage, sortedStudents.length)}
-              </Text>{" "}
-              of{" "}
-              <Text as="span" fontWeight="medium" color="#1c1b0c">
-                {sortedStudents.length}
-              </Text>{" "}
-              results
-            </Text>
-            <HStack spacing={2}>
-              <Button
-                size="sm"
-                variant="outline"
-                borderColor="#e5e5e0"
-                fontSize="sm"
-                fontWeight="medium"
-                color="#6b6646"
-                leftIcon={<ChevronLeftIcon />}
-                isDisabled={currentPage === 1}
-                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                _hover={{ bg: "#fcfcf8" }}
-              >
-                Previous
-              </Button>
-
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                (page) => (
-                  <Button
-                    key={page}
-                    size="sm"
-                    variant={currentPage === page ? "solid" : "outline"}
-                    bg={currentPage === page ? "#fde90d" : "transparent"}
-                    color={currentPage === page ? "#0A1926" : "#6b6646"}
-                    borderColor="#e5e5e0"
-                    fontWeight="bold"
-                    fontSize="sm"
-                    onClick={() => setCurrentPage(page)}
-                    _hover={{
-                      bg: currentPage === page ? "#fde90d" : "#fcfcf8",
-                    }}
-                  >
-                    {page}
-                  </Button>
-                )
-              )}
-
-              <Button
-                size="sm"
-                variant="outline"
-                borderColor="#e5e5e0"
-                fontSize="sm"
-                fontWeight="medium"
-                color="#6b6646"
-                rightIcon={<ChevronRightIcon />}
-                isDisabled={currentPage === totalPages || totalPages === 0}
-                onClick={() =>
-                  setCurrentPage((p) => Math.min(totalPages, p + 1))
-                }
-                _hover={{ bg: "#fcfcf8" }}
-              >
-                Next
-              </Button>
-            </HStack>
+            <Box>
+              <Heading size="lg" color="gray.800">
+                Student Management
+              </Heading>
+              <Text color="gray.500" mt={1}>
+                Manage and monitor all student accounts.
+              </Text>
+            </Box>
           </Flex>
-        </Box>
-      </Box>
 
-      {/* Add / Edit Student Modal */}
-      <Modal isOpen={isOpen} onClose={onClose} isCentered size="lg">
-        <ModalOverlay bg="blackAlpha.400" />
-        <ModalContent borderRadius="xl">
-          <ModalHeader fontWeight="bold" color="#0A1926">
-            {isEditing ? "Edit Student" : "Add New Student"}
-          </ModalHeader>
-          <ModalCloseButton />
-          <ModalBody pb={4}>
-            <VStack spacing={4}>
-              <FormControl isRequired>
-                <FormLabel fontSize="sm" fontWeight="medium" color="#1c1b0c">
-                  Full Name
-                </FormLabel>
-                <Input
-                  placeholder="Enter student name"
-                  fontSize="sm"
-                  bg="#fcfcf8"
-                  borderColor="#e5e5e0"
-                  _focus={{
-                    borderColor: "#fde90d",
-                    boxShadow: "0 0 0 1px #fde90d",
-                  }}
-                  value={formData.name}
-                  onChange={(e) =>
-                    setFormData({ ...formData, name: e.target.value })
-                  }
-                />
-              </FormControl>
-              <FormControl isRequired>
-                <FormLabel fontSize="sm" fontWeight="medium" color="#1c1b0c">
-                  Email Address
-                </FormLabel>
-                <Input
-                  type="email"
-                  placeholder="Enter email address"
-                  fontSize="sm"
-                  bg="#fcfcf8"
-                  borderColor="#e5e5e0"
-                  _focus={{
-                    borderColor: "#fde90d",
-                    boxShadow: "0 0 0 1px #fde90d",
-                  }}
-                  value={formData.email}
-                  onChange={(e) =>
-                    setFormData({ ...formData, email: e.target.value })
-                  }
-                />
-              </FormControl>
-              <FormControl>
-                <FormLabel fontSize="sm" fontWeight="medium" color="#1c1b0c">
-                  Phone Number
-                </FormLabel>
-                <Input
-                  placeholder="Enter phone number"
-                  fontSize="sm"
-                  bg="#fcfcf8"
-                  borderColor="#e5e5e0"
-                  _focus={{
-                    borderColor: "#fde90d",
-                    boxShadow: "0 0 0 1px #fde90d",
-                  }}
-                  value={formData.phone}
-                  onChange={(e) =>
-                    setFormData({ ...formData, phone: e.target.value })
-                  }
-                />
-              </FormControl>
-              <FormControl>
-                <FormLabel fontSize="sm" fontWeight="medium" color="#1c1b0c">
-                  Status
-                </FormLabel>
+          {/* Table Card */}
+          <Box
+            bg="white"
+            borderRadius="xl"
+            border="1px"
+            borderColor="gray.200"
+            shadow="sm"
+            overflow="hidden"
+          >
+            {/* Filters */}
+            <Flex
+              p={5}
+              borderBottom="1px"
+              borderColor="gray.200"
+              bg="gray.50"
+              direction={{ base: "column", md: "row" }}
+              gap={4}
+              align="center"
+              justify="space-between"
+            >
+              <HStack spacing={4} flex="1" w={{ base: "100%", md: "auto" }}>
+                <InputGroup maxW={{ base: "100%", md: "384px" }}>
+                  <InputLeftElement pointerEvents="none">
+                    <SearchIcon color="gray.400" />
+                  </InputLeftElement>
+                  <Input
+                    placeholder="Search by name or email..."
+                    bg="white"
+                    borderColor="gray.300"
+                    value={searchTerm}
+                    onChange={(e) => {
+                      setSearchTerm(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                  />
+                </InputGroup>
                 <Select
-                  fontSize="sm"
-                  bg="#fcfcf8"
-                  borderColor="#e5e5e0"
-                  _focus={{
-                    borderColor: "#fde90d",
-                    boxShadow: "0 0 0 1px #fde90d",
+                  maxW="180px"
+                  bg="white"
+                  borderColor="gray.300"
+                  value={statusFilter}
+                  onChange={(e) => {
+                    setStatusFilter(e.target.value);
+                    setCurrentPage(1);
                   }}
-                  value={formData.status}
-                  onChange={(e) =>
-                    setFormData({ ...formData, status: e.target.value })
+                >
+                  <option value="all">All Status</option>
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                </Select>
+              </HStack>
+              {/* <Button
+                size="sm"
+                variant="outline"
+                onClick={fetchStudents}
+                isLoading={loading}
+                loadingText="Refreshing..."
+              >
+                Refresh
+              </Button> */}
+            </Flex>
+
+            {/* Table */}
+            {loading ? (
+              <Center py={20}>
+                <Spinner size="xl" color="yellow.400" thickness="4px" />
+              </Center>
+            ) : (
+              <Box overflowX="auto">
+                <Table variant="simple">
+                  <Thead>
+                    <Tr bg="gray.50">
+                      <Th
+                        fontSize="xs"
+                        fontWeight="semibold"
+                        color="gray.500"
+                        textTransform="uppercase"
+                        letterSpacing="wider"
+                        py={4}
+                      >
+                        Name
+                      </Th>
+                      <Th
+                        fontSize="xs"
+                        fontWeight="semibold"
+                        color="gray.500"
+                        textTransform="uppercase"
+                        letterSpacing="wider"
+                        py={4}
+                      >
+                        Email
+                      </Th>
+                      <Th
+                        fontSize="xs"
+                        fontWeight="semibold"
+                        color="gray.500"
+                        textTransform="uppercase"
+                        letterSpacing="wider"
+                        py={4}
+                      >
+                        Enrollments
+                      </Th>
+                      <Th
+                        fontSize="xs"
+                        fontWeight="semibold"
+                        color="gray.500"
+                        textTransform="uppercase"
+                        letterSpacing="wider"
+                        py={4}
+                      >
+                        Created At
+                      </Th>
+                      <Th
+                        fontSize="xs"
+                        fontWeight="semibold"
+                        color="gray.500"
+                        textTransform="uppercase"
+                        letterSpacing="wider"
+                        py={4}
+                      >
+                        Status
+                      </Th>
+                      <Th
+                        fontSize="xs"
+                        fontWeight="semibold"
+                        color="gray.500"
+                        textTransform="uppercase"
+                        letterSpacing="wider"
+                        py={4}
+                        textAlign="right"
+                      >
+                        Actions
+                      </Th>
+                    </Tr>
+                  </Thead>
+                  <Tbody>
+                    {paginatedStudents.length === 0 ? (
+                      <Tr>
+                        <Td colSpan={6} textAlign="center" py={10}>
+                          <Text color="gray.500">No students found.</Text>
+                        </Td>
+                      </Tr>
+                    ) : (
+                      paginatedStudents.map((student, index) => {
+                        const statusKey = student.isActive
+                          ? "active"
+                          : "inactive";
+                        const statusStyle = statusColors[statusKey];
+                        return (
+                          <Tr
+                            key={student.id}
+                            _hover={{ bg: "gray.50", cursor: "pointer" }}
+                            transition="background-color 0.15s"
+                            onClick={() => handleViewClick(student)}
+                          >
+                            <Td py={4}>
+                              <HStack spacing={3}>
+                                <Avatar
+                                  size="sm"
+                                  name={student.name}
+                                  src={student.avatar}
+                                  bg={
+                                    avatarBgColors[
+                                      index % avatarBgColors.length
+                                    ]
+                                  }
+                                  color={avatarBgColors[
+                                    index % avatarBgColors.length
+                                  ].replace(".100", ".700")}
+                                  fontWeight="bold"
+                                  fontSize="sm"
+                                />
+                                <Box>
+                                  <Text fontWeight="medium" color="gray.800">
+                                    {student.name}
+                                  </Text>
+                                  <Text
+                                    fontSize="xs"
+                                    color="gray.500"
+                                    display={{ base: "block", md: "none" }}
+                                  >
+                                    {student.email}
+                                  </Text>
+                                </Box>
+                              </HStack>
+                            </Td>
+                            <Td>
+                              <Text fontSize="sm" color="gray.600">
+                                {student.email}
+                              </Text>
+                            </Td>
+                            <Td>
+                              <Badge
+                                px={2.5}
+                                py={0.5}
+                                borderRadius="md"
+                                fontSize="xs"
+                                fontWeight="medium"
+                                bg="blue.50"
+                                color="blue.700"
+                              >
+                                {student.enrollmentsCount} courses
+                              </Badge>
+                            </Td>
+                            <Td>
+                              <Text fontSize="sm" color="gray.600">
+                                {student.createdAt
+                                  ? new Date(
+                                      student.createdAt,
+                                    ).toLocaleDateString("en-US", {
+                                      year: "numeric",
+                                      month: "short",
+                                      day: "numeric",
+                                    })
+                                  : "-"}
+                              </Text>
+                            </Td>
+                            <Td>
+                              <Badge
+                                px={2.5}
+                                py={0.5}
+                                borderRadius="full"
+                                fontSize="xs"
+                                fontWeight="medium"
+                                bg={statusStyle.bg}
+                                color={statusStyle.color}
+                              >
+                                {student.isActive ? "Active" : "Inactive"}
+                              </Badge>
+                            </Td>
+                            <Td textAlign="right">
+                              <HStack
+                                spacing={4}
+                                justify="flex-end"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <Switch
+                                  size="sm"
+                                  colorScheme="green"
+                                  isChecked={student.isActive}
+                                  isDisabled={togglingStatus === student.id}
+                                  onChange={() => handleToggleStatus(student)}
+                                />
+                                <IconButton
+                                  aria-label="Delete student"
+                                  icon={<DeleteIcon />}
+                                  size="sm"
+                                  variant="ghost"
+                                  color="gray.400"
+                                  _hover={{
+                                    color: "red.600",
+                                    bg: "red.50",
+                                  }}
+                                  onClick={() => handleDeleteClick(student)}
+                                />
+                              </HStack>
+                            </Td>
+                          </Tr>
+                        );
+                      })
+                    )}
+                  </Tbody>
+                </Table>
+              </Box>
+            )}
+
+            {/* Pagination */}
+            <Flex
+              bg="gray.50"
+              borderTop="1px"
+              borderColor="gray.200"
+              px={6}
+              py={4}
+              align="center"
+              justify="space-between"
+            >
+              <Text fontSize="sm" color="gray.500">
+                Showing{" "}
+                <Text as="span" fontWeight="medium">
+                  {startItem}
+                </Text>{" "}
+                to{" "}
+                <Text as="span" fontWeight="medium">
+                  {endItem}
+                </Text>{" "}
+                of{" "}
+                <Text as="span" fontWeight="medium">
+                  {filteredStudents.length}
+                </Text>{" "}
+                results
+              </Text>
+              <HStack spacing={2}>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  isDisabled={currentPage === 1}
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                >
+                  Previous
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  isDisabled={currentPage >= totalPages}
+                  onClick={() =>
+                    setCurrentPage((p) => Math.min(totalPages, p + 1))
                   }
                 >
-                  <option value="Active">Active</option>
-                  <option value="Inactive">Inactive</option>
-                  <option value="Blocked">Blocked</option>
-                </Select>
-              </FormControl>
-            </VStack>
-          </ModalBody>
-          <ModalFooter gap={2}>
-            <Button
-              variant="outline"
-              borderColor="#e5e5e0"
-              fontSize="sm"
-              onClick={onClose}
-            >
-              Cancel
-            </Button>
-            <Button
-              bg="#0A1926"
-              color="white"
-              fontSize="sm"
-              fontWeight="bold"
-              _hover={{ opacity: 0.9 }}
-              onClick={handleSubmit}
-            >
-              {isEditing ? "Save Changes" : "Add Student"}
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
+                  Next
+                </Button>
+              </HStack>
+            </Flex>
+          </Box>
 
-      {/* Delete Confirmation Modal */}
-      <Modal isOpen={isDeleteOpen} onClose={onDeleteClose} isCentered>
-        <ModalOverlay bg="blackAlpha.400" />
-        <ModalContent borderRadius="xl">
-          <ModalHeader fontWeight="bold" color="#0A1926">
-            Confirm Delete
-          </ModalHeader>
-          <ModalCloseButton />
-          <ModalBody>
-            <Text fontSize="sm" color="#1c1b0c">
-              Are you sure you want to delete{" "}
-              <Text as="span" fontWeight="bold">
-                {selectedStudent?.name}
-              </Text>
-              ? This action cannot be undone.
-            </Text>
-          </ModalBody>
-          <ModalFooter gap={2}>
-            <Button
-              variant="outline"
-              borderColor="#e5e5e0"
-              fontSize="sm"
-              onClick={onDeleteClose}
-            >
-              Cancel
-            </Button>
-            <Button
-              colorScheme="red"
-              fontSize="sm"
-              fontWeight="bold"
-              onClick={confirmDelete}
-            >
-              Delete
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
+          {/* View Info Modal */}
+          <StudentInfoModal
+            isOpen={isViewOpen}
+            onClose={onViewClose}
+            student={viewStudent}
+          />
+
+          {/* Delete Confirmation */}
+          <AlertDialog
+            isOpen={isDeleteOpen}
+            leastDestructiveRef={cancelRef}
+            onClose={onDeleteClose}
+            isCentered
+          >
+            <AlertDialogOverlay>
+              <AlertDialogContent>
+                <AlertDialogHeader fontSize="lg" fontWeight="bold">
+                  Delete Student
+                </AlertDialogHeader>
+                <AlertDialogBody>
+                  Are you sure you want to delete{" "}
+                  <Text as="span" fontWeight="bold">
+                    {deleteTarget?.name}
+                  </Text>
+                  ? This action cannot be undone.
+                </AlertDialogBody>
+                <AlertDialogFooter>
+                  <Button ref={cancelRef} onClick={onDeleteClose}>
+                    Cancel
+                  </Button>
+                  <Button
+                    colorScheme="red"
+                    onClick={handleDeleteConfirm}
+                    ml={3}
+                    isLoading={isDeleting}
+                    loadingText="Deleting..."
+                  >
+                    Delete
+                  </Button>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialogOverlay>
+          </AlertDialog>
+        </Box>
+      </Flex>
     </Box>
   );
 };
