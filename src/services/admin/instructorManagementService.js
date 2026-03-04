@@ -1,4 +1,6 @@
-const API_BASE = (import.meta.env.VITE_API_URL || "http://localhost:3000").replace(/\/api\/?$/, "");
+const API_BASE = (
+  import.meta.env.VITE_API_URL || "http://localhost:3000"
+).replace(/\/api\/?$/, "");
 const API_URL = `${API_BASE}/api`;
 
 const getAuthToken = () => localStorage.getItem("token");
@@ -37,6 +39,9 @@ const mapUserToInstructor = (user) => ({
   id: user.userId,
   name: user.fullName,
   email: user.email,
+  phoneNumber: user.phoneNumber || null,
+  currentLevel: user.currentLevel || null,
+  isActive: user.isActive ?? true,
   roles: user.roles || [],
   createdAt: user.createdAt,
   updatedAt: user.updatedAt,
@@ -52,7 +57,7 @@ export const instructorAPI = {
       method: "GET",
     });
     const instructors = data.filter((user) =>
-      user.roles.includes("instructor")
+      user.roles.includes("instructor"),
     );
     return instructors.map(mapUserToInstructor);
   },
@@ -73,6 +78,11 @@ export const instructorAPI = {
       password: instructorData.password,
       roles: ["instructor"],
     };
+    if (instructorData.phoneNumber)
+      payload.phoneNumber = instructorData.phoneNumber;
+    if (instructorData.currentLevel)
+      payload.currentLevel = instructorData.currentLevel;
+
     const data = await fetchWithAuth(`${API_URL}/users`, {
       method: "POST",
       body: JSON.stringify(payload),
@@ -86,10 +96,26 @@ export const instructorAPI = {
     if (instructorData.name) payload.name = instructorData.name;
     if (instructorData.email) payload.email = instructorData.email;
     if (instructorData.password) payload.password = instructorData.password;
+    if (typeof instructorData.isActive === "boolean") {
+      payload.isActive = instructorData.isActive;
+    }
+    if (instructorData.phoneNumber !== undefined)
+      payload.phoneNumber = instructorData.phoneNumber;
+    if (instructorData.currentLevel)
+      payload.currentLevel = instructorData.currentLevel;
 
     const data = await fetchWithAuth(`${API_URL}/users/${userId}`, {
       method: "PUT",
       body: JSON.stringify(payload),
+    });
+    return mapUserToInstructor(data);
+  },
+
+  // Toggle instructor active status
+  toggleInstructorStatus: async (userId, currentIsActive) => {
+    const data = await fetchWithAuth(`${API_URL}/users/${userId}`, {
+      method: "PUT",
+      body: JSON.stringify({ isActive: !currentIsActive }),
     });
     return mapUserToInstructor(data);
   },

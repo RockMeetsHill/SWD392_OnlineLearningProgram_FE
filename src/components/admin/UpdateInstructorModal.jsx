@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Modal,
   ModalOverlay,
@@ -11,52 +11,41 @@ import {
   FormControl,
   FormLabel,
   Input,
-  InputGroup,
-  InputRightElement,
-  IconButton,
   Select,
   VStack,
   useToast,
 } from "@chakra-ui/react";
-import { ViewIcon, ViewOffIcon } from "@chakra-ui/icons";
 import { instructorAPI } from "../../services/admin/instructorManagementService";
 
 const LEVELS = ["A0", "A1", "A2", "B1", "B2", "C1", "C2"];
 
-function CreateInstructorModal({ isOpen, onClose, onCreated }) {
+function UpdateInstructorModal({ isOpen, onClose, instructor, onUpdated }) {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
-    password: "",
     phoneNumber: "",
     currentLevel: "A0",
   });
-  const [showPassword, setShowPassword] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const toast = useToast();
+
+  useEffect(() => {
+    if (instructor) {
+      setFormData({
+        name: instructor.name || "",
+        email: instructor.email || "",
+        phoneNumber: instructor.phoneNumber || "",
+        currentLevel: instructor.currentLevel || "A0",
+      });
+    }
+  }, [instructor]);
 
   const handleChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const resetForm = () => {
-    setFormData({
-      name: "",
-      email: "",
-      password: "",
-      phoneNumber: "",
-      currentLevel: "A0",
-    });
-    setShowPassword(false);
-  };
-
-  const handleClose = () => {
-    resetForm();
-    onClose();
-  };
-
   const handleSave = async () => {
-    if (!formData.name || !formData.email || !formData.password) {
+    if (!formData.name || !formData.email) {
       toast({
         title: "Validation Error",
         description: "Please fill in all required fields.",
@@ -67,47 +56,39 @@ function CreateInstructorModal({ isOpen, onClose, onCreated }) {
       return;
     }
 
-    if (formData.password.length < 8) {
-      toast({
-        title: "Validation Error",
-        description: "Password must be at least 8 characters.",
-        status: "error",
-        duration: 3000,
-        isClosable: true,
-      });
-      return;
-    }
-
-    setIsSubmitting(true);
+    setIsSaving(true);
     try {
-      const newInstructor = await instructorAPI.createInstructor(formData);
-      onCreated(newInstructor);
+      const updated = await instructorAPI.updateInstructor(
+        instructor.id,
+        formData,
+      );
       toast({
-        title: "Instructor created",
-        description: `${formData.name} has been added successfully.`,
+        title: "Instructor updated",
+        description: `${formData.name}'s information has been updated.`,
         status: "success",
         duration: 3000,
         isClosable: true,
       });
-      handleClose();
+      onUpdated(updated);
+      onClose();
     } catch (error) {
       toast({
-        title: "Error creating instructor",
-        description: error.message || "Something went wrong.",
+        title: "Error updating instructor",
+        description: error.message || "Failed to update instructor.",
         status: "error",
         duration: 3000,
         isClosable: true,
       });
     } finally {
-      setIsSubmitting(false);
+      setIsSaving(false);
     }
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} size="lg" isCentered>
+    <Modal isOpen={isOpen} onClose={onClose} size="lg" isCentered>
       <ModalOverlay />
       <ModalContent>
-        <ModalHeader>Create Instructor Account</ModalHeader>
+        <ModalHeader>Edit Instructor</ModalHeader>
         <ModalCloseButton />
         <ModalBody pb={6}>
           <VStack spacing={4}>
@@ -127,28 +108,6 @@ function CreateInstructorModal({ isOpen, onClose, onCreated }) {
                 value={formData.email}
                 onChange={(e) => handleChange("email", e.target.value)}
               />
-            </FormControl>
-            <FormControl isRequired>
-              <FormLabel>Password</FormLabel>
-              <InputGroup>
-                <Input
-                  type={showPassword ? "text" : "password"}
-                  placeholder="Enter password (min 8 characters)"
-                  value={formData.password}
-                  onChange={(e) => handleChange("password", e.target.value)}
-                />
-                <InputRightElement>
-                  <IconButton
-                    aria-label={
-                      showPassword ? "Hide password" : "Show password"
-                    }
-                    icon={showPassword ? <ViewOffIcon /> : <ViewIcon />}
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setShowPassword((prev) => !prev)}
-                  />
-                </InputRightElement>
-              </InputGroup>
             </FormControl>
             <FormControl>
               <FormLabel>Phone Number</FormLabel>
@@ -175,7 +134,7 @@ function CreateInstructorModal({ isOpen, onClose, onCreated }) {
           </VStack>
         </ModalBody>
         <ModalFooter>
-          <Button onClick={handleClose} mr={3}>
+          <Button onClick={onClose} mr={3}>
             Cancel
           </Button>
           <Button
@@ -183,10 +142,10 @@ function CreateInstructorModal({ isOpen, onClose, onCreated }) {
             color="gray.800"
             _hover={{ bg: "#e6d30a" }}
             onClick={handleSave}
-            isLoading={isSubmitting}
-            loadingText="Creating..."
+            isLoading={isSaving}
+            loadingText="Saving..."
           >
-            Create
+            Save
           </Button>
         </ModalFooter>
       </ModalContent>
@@ -194,4 +153,4 @@ function CreateInstructorModal({ isOpen, onClose, onCreated }) {
   );
 }
 
-export default CreateInstructorModal;
+export default UpdateInstructorModal;
