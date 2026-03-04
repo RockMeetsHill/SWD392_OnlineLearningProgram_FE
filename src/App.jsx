@@ -22,6 +22,7 @@ import CourseApprovalDetails from "./pages/admin/CourseApprovalDetails";
 import Cart from './pages/student/Cart'
 import ProtectedRoute from './components/ProtectedRoute'
 import StudentCourseLearn from "./pages/student/StudentCourseLearn";
+import StudentManagement from "./pages/admin/StudentManagement";
 
 function RedirectStudentCourseToLearn() {
   const { courseId } = useParams()
@@ -63,6 +64,7 @@ function App() {
       <Route path="/admin/instructor-payroll" element={<InstructorPayroll />} />
       <Route path="/admin/course-approvals" element={<CourseApprovals />} />
       <Route path="/admin/course-approvals/:id" element={<CourseApprovalDetails />} />
+      <Route path="/admin/manage/students" element={<StudentManagement />} />
     </Routes>
   );
 }

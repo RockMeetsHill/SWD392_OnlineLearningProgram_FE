@@ -108,6 +108,7 @@ const getStudentCount = (r) =>
       r.totalEnrollments ??
       r.total_enrollments ??
       r.studentsCount ??
+      r.earningCount ??
       0,
   );
 

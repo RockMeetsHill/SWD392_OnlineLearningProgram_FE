@@ -799,7 +799,7 @@ export default function CourseApprovalDetails() {
         </Flex>
       </Box>
 
-      {/* ── Approve Confirmation Modal ──────────────────────────── */}
+      {/*Approve Confirmation Modal */}
       <Modal isOpen={isApproveOpen} onClose={onApproveClose} isCentered>
         <ModalOverlay />
         <ModalContent>
@@ -833,7 +833,7 @@ export default function CourseApprovalDetails() {
         </ModalContent>
       </Modal>
 
-      {/* ── Reject Modal ────────────────────────────────────────── */}
+      {/* Reject Modal*/}
       <Modal isOpen={isRejectOpen} onClose={onRejectClose} isCentered size="lg">
         <ModalOverlay />
         <ModalContent>
@@ -870,7 +870,7 @@ export default function CourseApprovalDetails() {
         </ModalContent>
       </Modal>
 
-      {/* ── Lesson Preview Modal ────────────────────────────────── */}
+      {/* Lesson Preview Modal*/}
       <Modal
         isOpen={isPreviewOpen}
         onClose={onPreviewClose}

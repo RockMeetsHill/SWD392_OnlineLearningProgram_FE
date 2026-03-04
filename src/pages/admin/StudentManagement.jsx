@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   Box,
   Flex,
@@ -20,7 +20,6 @@ import {
   Switch,
   IconButton,
   HStack,
-  VStack,
   useToast,
   useDisclosure,
   Spinner,
@@ -32,13 +31,11 @@ import {
   AlertDialogContent,
   AlertDialogOverlay,
 } from "@chakra-ui/react";
-import { SearchIcon, AddIcon, EditIcon, DeleteIcon } from "@chakra-ui/icons";
+import { SearchIcon, DeleteIcon } from "@chakra-ui/icons";
 import AdminNavbar from "../../components/admin/AdminNavbar";
 import AdminSidebar from "../../components/admin/AdminSidebar";
-import CreateInstructorModal from "../../components/admin/CreateInstructorModal";
-import UpdateInstructorModal from "../../components/admin/UpdateInstructorModal";
-import InstructorInfoModal from "../../components/admin/InstructorInfoModal";
-import { instructorAPI } from "../../services/admin/instructorManagementService";
+import StudentInfoModal from "../../components/admin/StudentInfoModal";
+import { studentAPI } from "../../services/admin/studentManagementService";
 
 const statusColors = {
   active: { bg: "green.100", color: "green.800" },
@@ -53,33 +50,19 @@ const avatarBgColors = [
   "purple.100",
 ];
 
-const LEVELS = ["A0", "A1", "A2", "B1", "B2", "C1", "C2"];
-
-function InstructorManagement() {
-  const [instructors, setInstructors] = useState([]);
+const StudentManagement = () => {
+  const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [levelFilter, setLevelFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
-  const [selectedInstructor, setSelectedInstructor] = useState(null);
-  const [viewInstructor, setViewInstructor] = useState(null);
+  const [viewStudent, setViewStudent] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [togglingStatus, setTogglingStatus] = useState(null);
 
   const itemsPerPage = 5;
   const toast = useToast();
-  const {
-    isOpen: isEditOpen,
-    onOpen: onEditOpen,
-    onClose: onEditClose,
-  } = useDisclosure();
-  const {
-    isOpen: isCreateOpen,
-    onOpen: onCreateOpen,
-    onClose: onCreateClose,
-  } = useDisclosure();
   const {
     isOpen: isDeleteOpen,
     onOpen: onDeleteOpen,
@@ -92,16 +75,16 @@ function InstructorManagement() {
   } = useDisclosure();
   const cancelRef = useRef();
 
-  // Fetch instructors from API
-  const fetchInstructors = async () => {
+  // Fetch students from API
+  const fetchStudents = async () => {
     setLoading(true);
     try {
-      const data = await instructorAPI.getAllInstructors();
-      setInstructors(data);
+      const data = await studentAPI.getAllStudents();
+      setStudents(data);
     } catch (error) {
       toast({
-        title: "Error fetching instructors",
-        description: error.message || "Failed to load instructors.",
+        title: "Error fetching students",
+        description: error.message || "Failed to load students.",
         status: "error",
         duration: 3000,
         isClosable: true,
@@ -112,67 +95,50 @@ function InstructorManagement() {
   };
 
   useEffect(() => {
-    fetchInstructors();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    fetchStudents();
   }, []);
 
   // Filter logic
-  const filteredInstructors = instructors.filter((instructor) => {
+  const filteredStudents = students.filter((student) => {
     const matchesSearch =
-      instructor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      instructor.email.toLowerCase().includes(searchTerm.toLowerCase());
+      student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      student.email.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus =
       statusFilter === "all" ||
-      (statusFilter === "active" && instructor.isActive) ||
-      (statusFilter === "inactive" && !instructor.isActive);
-    const matchesLevel =
-      levelFilter === "all" || instructor.currentLevel === levelFilter;
-    return matchesSearch && matchesStatus && matchesLevel;
+      (statusFilter === "active" && student.isActive) ||
+      (statusFilter === "inactive" && !student.isActive);
+    return matchesSearch && matchesStatus;
   });
 
   // Pagination
-  const totalPages = Math.ceil(filteredInstructors.length / itemsPerPage);
-  const paginatedInstructors = filteredInstructors.slice(
+  const totalPages = Math.ceil(filteredStudents.length / itemsPerPage);
+  const paginatedStudents = filteredStudents.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage,
   );
   const startItem =
-    filteredInstructors.length === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1;
-  const endItem = Math.min(
-    currentPage * itemsPerPage,
-    filteredInstructors.length,
-  );
+    filteredStudents.length === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1;
+  const endItem = Math.min(currentPage * itemsPerPage, filteredStudents.length);
 
   // Handlers
-  const handleViewClick = (instructor) => {
-    setViewInstructor(instructor);
+  const handleViewClick = (student) => {
+    setViewStudent(student);
     onViewOpen();
   };
 
-  const handleEditClick = (instructor) => {
-    setSelectedInstructor(instructor);
-    onEditOpen();
-  };
-
-  const handleInstructorUpdated = (updated) => {
-    setInstructors((prev) =>
-      prev.map((i) => (i.id === updated.id ? { ...i, ...updated } : i)),
-    );
-  };
-
-  const handleToggleStatus = async (instructor) => {
-    setTogglingStatus(instructor.id);
+  const handleToggleStatus = async (student) => {
+    setTogglingStatus(student.id);
     try {
-      const updated = await instructorAPI.toggleInstructorStatus(
-        instructor.id,
-        instructor.isActive,
+      const updated = await studentAPI.toggleStudentStatus(
+        student.id,
+        student.isActive,
       );
-      setInstructors((prev) =>
-        prev.map((i) => (i.id === instructor.id ? { ...i, ...updated } : i)),
+      setStudents((prev) =>
+        prev.map((s) => (s.id === student.id ? updated : s)),
       );
       toast({
         title: "Status updated",
-        description: `${instructor.name} is now ${updated.isActive ? "Active" : "Inactive"}.`,
+        description: `${student.name} is now ${updated.isActive ? "Active" : "Inactive"}.`,
         status: "success",
         duration: 2000,
         isClosable: true,
@@ -190,22 +156,18 @@ function InstructorManagement() {
     }
   };
 
-  const handleInstructorCreated = () => {
-    fetchInstructors();
-  };
-
-  const handleDeleteClick = (instructor) => {
-    setDeleteTarget(instructor);
+  const handleDeleteClick = (student) => {
+    setDeleteTarget(student);
     onDeleteOpen();
   };
 
   const handleDeleteConfirm = async () => {
     setIsDeleting(true);
     try {
-      await instructorAPI.deleteInstructor(deleteTarget.id);
-      setInstructors((prev) => prev.filter((i) => i.id !== deleteTarget.id));
+      await studentAPI.deleteStudent(deleteTarget.id);
+      setStudents((prev) => prev.filter((s) => s.id !== deleteTarget.id));
       toast({
-        title: "Instructor deleted",
+        title: "Student deleted",
         description: `${deleteTarget.name} has been removed.`,
         status: "info",
         duration: 3000,
@@ -215,8 +177,8 @@ function InstructorManagement() {
       setDeleteTarget(null);
     } catch (error) {
       toast({
-        title: "Error deleting instructor",
-        description: error.message || "Failed to delete instructor.",
+        title: "Error deleting student",
+        description: error.message || "Failed to delete student.",
         status: "error",
         duration: 3000,
         isClosable: true,
@@ -248,23 +210,12 @@ function InstructorManagement() {
           >
             <Box>
               <Heading size="lg" color="gray.800">
-                Instructor Management
+                Student Management
               </Heading>
               <Text color="gray.500" mt={1}>
-                Manage, verify, and monitor all instructor accounts.
+                Manage and monitor all student accounts.
               </Text>
             </Box>
-            <Button
-              bg="#FDE80B"
-              color="gray.800"
-              _hover={{ bg: "#e6d30a" }}
-              fontWeight="semibold"
-              leftIcon={<AddIcon />}
-              shadow="sm"
-              onClick={onCreateOpen}
-            >
-              Create Instructor Account
-            </Button>
           </Flex>
 
           {/* Table Card */}
@@ -317,28 +268,11 @@ function InstructorManagement() {
                   <option value="active">Active</option>
                   <option value="inactive">Inactive</option>
                 </Select>
-                <Select
-                  maxW="180px"
-                  bg="white"
-                  borderColor="gray.300"
-                  value={levelFilter}
-                  onChange={(e) => {
-                    setLevelFilter(e.target.value);
-                    setCurrentPage(1);
-                  }}
-                >
-                  <option value="all">All Levels</option>
-                  {LEVELS.map((level) => (
-                    <option key={level} value={level}>
-                      {level}
-                    </option>
-                  ))}
-                </Select>
               </HStack>
               {/* <Button
                 size="sm"
                 variant="outline"
-                onClick={fetchInstructors}
+                onClick={fetchStudents}
                 isLoading={loading}
                 loadingText="Refreshing..."
               >
@@ -384,7 +318,7 @@ function InstructorManagement() {
                         letterSpacing="wider"
                         py={4}
                       >
-                        Courses
+                        Enrollments
                       </Th>
                       <Th
                         fontSize="xs"
@@ -420,31 +354,31 @@ function InstructorManagement() {
                     </Tr>
                   </Thead>
                   <Tbody>
-                    {paginatedInstructors.length === 0 ? (
+                    {paginatedStudents.length === 0 ? (
                       <Tr>
                         <Td colSpan={6} textAlign="center" py={10}>
-                          <Text color="gray.500">No instructors found.</Text>
+                          <Text color="gray.500">No students found.</Text>
                         </Td>
                       </Tr>
                     ) : (
-                      paginatedInstructors.map((instructor, index) => {
-                        const statusKey = instructor.isActive
+                      paginatedStudents.map((student, index) => {
+                        const statusKey = student.isActive
                           ? "active"
                           : "inactive";
                         const statusStyle = statusColors[statusKey];
                         return (
                           <Tr
-                            key={instructor.id}
+                            key={student.id}
                             _hover={{ bg: "gray.50", cursor: "pointer" }}
                             transition="background-color 0.15s"
-                            onClick={() => handleViewClick(instructor)}
+                            onClick={() => handleViewClick(student)}
                           >
                             <Td py={4}>
                               <HStack spacing={3}>
                                 <Avatar
                                   size="sm"
-                                  name={instructor.name}
-                                  src={instructor.avatar}
+                                  name={student.name}
+                                  src={student.avatar}
                                   bg={
                                     avatarBgColors[
                                       index % avatarBgColors.length
@@ -458,21 +392,21 @@ function InstructorManagement() {
                                 />
                                 <Box>
                                   <Text fontWeight="medium" color="gray.800">
-                                    {instructor.name}
+                                    {student.name}
                                   </Text>
                                   <Text
                                     fontSize="xs"
                                     color="gray.500"
                                     display={{ base: "block", md: "none" }}
                                   >
-                                    {instructor.email}
+                                    {student.email}
                                   </Text>
                                 </Box>
                               </HStack>
                             </Td>
                             <Td>
                               <Text fontSize="sm" color="gray.600">
-                                {instructor.email}
+                                {student.email}
                               </Text>
                             </Td>
                             <Td>
@@ -485,14 +419,14 @@ function InstructorManagement() {
                                 bg="blue.50"
                                 color="blue.700"
                               >
-                                {instructor.coursesCount} courses
+                                {student.enrollmentsCount} courses
                               </Badge>
                             </Td>
                             <Td>
                               <Text fontSize="sm" color="gray.600">
-                                {instructor.createdAt
+                                {student.createdAt
                                   ? new Date(
-                                      instructor.createdAt,
+                                      student.createdAt,
                                     ).toLocaleDateString("en-US", {
                                       year: "numeric",
                                       month: "short",
@@ -502,19 +436,17 @@ function InstructorManagement() {
                               </Text>
                             </Td>
                             <Td>
-                              <HStack spacing={3}>
-                                <Badge
-                                  px={2.5}
-                                  py={0.5}
-                                  borderRadius="full"
-                                  fontSize="xs"
-                                  fontWeight="medium"
-                                  bg={statusStyle.bg}
-                                  color={statusStyle.color}
-                                >
-                                  {instructor.isActive ? "Active" : "Inactive"}
-                                </Badge>
-                              </HStack>
+                              <Badge
+                                px={2.5}
+                                py={0.5}
+                                borderRadius="full"
+                                fontSize="xs"
+                                fontWeight="medium"
+                                bg={statusStyle.bg}
+                                color={statusStyle.color}
+                              >
+                                {student.isActive ? "Active" : "Inactive"}
+                              </Badge>
                             </Td>
                             <Td textAlign="right">
                               <HStack
@@ -525,26 +457,12 @@ function InstructorManagement() {
                                 <Switch
                                   size="sm"
                                   colorScheme="green"
-                                  isChecked={instructor.isActive}
-                                  isDisabled={togglingStatus === instructor.id}
-                                  onChange={() =>
-                                    handleToggleStatus(instructor)
-                                  }
+                                  isChecked={student.isActive}
+                                  isDisabled={togglingStatus === student.id}
+                                  onChange={() => handleToggleStatus(student)}
                                 />
                                 <IconButton
-                                  aria-label="Edit instructor"
-                                  icon={<EditIcon />}
-                                  size="sm"
-                                  variant="ghost"
-                                  color="gray.400"
-                                  _hover={{
-                                    color: "blue.600",
-                                    bg: "blue.50",
-                                  }}
-                                  onClick={() => handleEditClick(instructor)}
-                                />
-                                <IconButton
-                                  aria-label="Delete instructor"
+                                  aria-label="Delete student"
                                   icon={<DeleteIcon />}
                                   size="sm"
                                   variant="ghost"
@@ -553,7 +471,7 @@ function InstructorManagement() {
                                     color: "red.600",
                                     bg: "red.50",
                                   }}
-                                  onClick={() => handleDeleteClick(instructor)}
+                                  onClick={() => handleDeleteClick(student)}
                                 />
                               </HStack>
                             </Td>
@@ -587,7 +505,7 @@ function InstructorManagement() {
                 </Text>{" "}
                 of{" "}
                 <Text as="span" fontWeight="medium">
-                  {filteredInstructors.length}
+                  {filteredStudents.length}
                 </Text>{" "}
                 results
               </Text>
@@ -614,26 +532,11 @@ function InstructorManagement() {
             </Flex>
           </Box>
 
-          {/* Create Modal */}
-          <CreateInstructorModal
-            isOpen={isCreateOpen}
-            onClose={onCreateClose}
-            onCreated={handleInstructorCreated}
-          />
-
-          {/* Edit Modal */}
-          <UpdateInstructorModal
-            isOpen={isEditOpen}
-            onClose={onEditClose}
-            instructor={selectedInstructor}
-            onUpdated={handleInstructorUpdated}
-          />
-
           {/* View Info Modal */}
-          <InstructorInfoModal
+          <StudentInfoModal
             isOpen={isViewOpen}
             onClose={onViewClose}
-            instructor={viewInstructor}
+            student={viewStudent}
           />
 
           {/* Delete Confirmation */}
@@ -646,7 +549,7 @@ function InstructorManagement() {
             <AlertDialogOverlay>
               <AlertDialogContent>
                 <AlertDialogHeader fontSize="lg" fontWeight="bold">
-                  Delete Instructor
+                  Delete Student
                 </AlertDialogHeader>
                 <AlertDialogBody>
                   Are you sure you want to delete{" "}
@@ -676,6 +579,6 @@ function InstructorManagement() {
       </Flex>
     </Box>
   );
-}
+};
 
-export default InstructorManagement;
+export default StudentManagement;

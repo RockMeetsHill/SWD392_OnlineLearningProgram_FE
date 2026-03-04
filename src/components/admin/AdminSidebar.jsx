@@ -138,7 +138,7 @@ const AdminSidebar = () => {
     {
       name: "Student Management",
       icon: StudentsIcon,
-      path: "/admin/students",
+      path: "/admin/manage/students",
     },
     {
       name: "Course Approvals",
