@@ -1,4 +1,6 @@
-const API_BASE = (import.meta.env.VITE_API_URL || "http://localhost:3000").replace(/\/api\/?$/, "");
+const API_BASE = (
+  import.meta.env.VITE_API_URL || "http://localhost:3000"
+).replace(/\/api\/?$/, "");
 const API_URL = `${API_BASE}/api`;
 
 const getAuthToken = () => localStorage.getItem("token");
@@ -52,7 +54,7 @@ export const instructorAPI = {
       method: "GET",
     });
     const instructors = data.filter((user) =>
-      user.roles.includes("instructor")
+      user.roles.includes("instructor"),
     );
     return instructors.map(mapUserToInstructor);
   },
@@ -99,5 +101,59 @@ export const instructorAPI = {
     return fetchWithAuth(`${API_URL}/users/${userId}`, {
       method: "DELETE",
     });
+  },
+};
+
+// Course Approval API functions (for admin reviewing lesson content)
+export const courseApprovalAPI = {
+  // Get course by ID (for admin review)
+  getCourseById: async (courseId) => {
+    return fetchWithAuth(`${API_URL}/courses/${courseId}`, {
+      method: "GET",
+    });
+  },
+
+  // Approve course (admin only)
+  approveCourse: async (courseId) => {
+    return fetchWithAuth(`${API_URL}/courses/${courseId}/approve`, {
+      method: "POST",
+    });
+  },
+
+  // Reject course (admin only)
+  rejectCourse: async (courseId, adminNote) => {
+    return fetchWithAuth(`${API_URL}/courses/${courseId}/reject`, {
+      method: "POST",
+      body: JSON.stringify({ adminNote }),
+    });
+  },
+
+  // Get lesson details (includes resources + quizzes)
+  getLessonById: async (lessonId) => {
+    return fetchWithAuth(`${API_URL}/lessons/${lessonId}`, {
+      method: "GET",
+    });
+  },
+
+  // Get lesson resources (documents, videos, etc.)
+  getLessonResources: async (lessonId) => {
+    return fetchWithAuth(`${API_URL}/lessons/${lessonId}/resources`, {
+      method: "GET",
+    });
+  },
+
+  // Get quizzes for a lesson
+  getLessonQuizzes: async (lessonId) => {
+    return fetchWithAuth(`${API_URL}/quizzes/lesson/${lessonId}`, {
+      method: "GET",
+    });
+  },
+
+  // Get quiz details (with questions & answers)
+  getQuizById: async (quizId) => {
+    const data = await fetchWithAuth(`${API_URL}/quizzes/${quizId}`, {
+      method: "GET",
+    });
+    return data.quiz != null ? data.quiz : data;
   },
 };

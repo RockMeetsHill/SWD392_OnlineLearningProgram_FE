@@ -30,7 +30,9 @@ import {
 import { ArrowBackIcon, CheckIcon, CloseIcon } from "@chakra-ui/icons";
 import AdminNavbar from "../../components/admin/AdminNavbar";
 import AdminSidebar from "../../components/admin/AdminSidebar";
-import { courseAPI } from "../../services/courseService";
+import { courseApprovalAPI } from "../../services/admin/courseApprovalService";
+import LessonPreviewModal from "../../components/admin/LessonPreviewModal";
+import QuizPreviewModal from "../../components/admin/QuizPreviewModal";
 
 /* ── Icons ──────────────────────────────────────────────────── */
 const PlayCircleIcon = (props) => (
@@ -47,7 +49,7 @@ const money = (v) =>
     v ?? 0,
   );
 
-/* ── status helpers (matching real API values) ───────────────── */
+/* ── status helpers ──────────────────────────────────────────── */
 const STATUS_MAP = {
   draft: { scheme: "gray", label: "Draft" },
   pending_review: { scheme: "yellow", label: "Pending Review" },
@@ -70,14 +72,24 @@ export default function CourseApprovalDetails() {
   const [course, setCourse] = useState(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
-  const [selectedLesson, setSelectedLesson] = useState(null);
 
-  // Modals
+  // Lesson preview
+  const [selectedLesson, setSelectedLesson] = useState(null);
   const {
     isOpen: isPreviewOpen,
     onOpen: onPreviewOpen,
     onClose: onPreviewClose,
   } = useDisclosure();
+
+  // Quiz preview
+  const [selectedQuiz, setSelectedQuiz] = useState(null);
+  const {
+    isOpen: isQuizPreviewOpen,
+    onOpen: onQuizPreviewOpen,
+    onClose: onQuizPreviewClose,
+  } = useDisclosure();
+
+  // Approve / Reject modals
   const {
     isOpen: isRejectOpen,
     onOpen: onRejectOpen,
@@ -97,9 +109,8 @@ export default function CourseApprovalDetails() {
   const muted = useColorModeValue("gray.500", "gray.400");
   const moduleBg = useColorModeValue("gray.50", "gray.900");
   const lessonCodeBg = useColorModeValue("gray.100", "gray.700");
-  const noVideoBg = useColorModeValue("gray.100", "gray.700");
 
-  /* ── normalize API response ─────────────────────────────────── */
+  /* ── normalize ─────────────────────────────────────────────── */
   const normalize = useCallback((c) => {
     if (!c) return null;
 
@@ -108,13 +119,17 @@ export default function CourseApprovalDetails() {
         const lessons = (mod.lessons || mod.lectures || mod.items || []).map(
           (lesson, lIdx) => ({
             id: lesson.lessonId || lesson._id || lesson.id || `${idx}-${lIdx}`,
+            lessonId: lesson.lessonId || lesson._id || lesson.id || null,
             code: lesson.code || `${idx + 1}.${lIdx + 1}`,
             title: lesson.title || lesson.name || `Lesson ${lIdx + 1}`,
             type: lesson.type || lesson.contentType || "Video",
             length: lesson.length || lesson.duration || "0:00",
             previewUrl:
               lesson.previewUrl || lesson.videoUrl || lesson.url || "",
+            mediaUrl: lesson.mediaUrl || "",
+            contentText: lesson.contentText || "",
             description: lesson.description || "",
+            quizzes: lesson.quizzes || [],
           }),
         );
 
@@ -129,15 +144,14 @@ export default function CourseApprovalDetails() {
       },
     );
 
-    const totalLessons = modules.reduce(
-      (acc, m) => acc + m.lessons.length,
-      0,
-    );
+    const totalLessons = modules.reduce((acc, m) => acc + m.lessons.length, 0);
 
-    // Target audience
     let targetAudience = c.targetAudience || c.target_audience || [];
     if (typeof targetAudience === "string") {
-      targetAudience = targetAudience.split(",").map((a) => a.trim()).filter(Boolean);
+      targetAudience = targetAudience
+        .split(",")
+        .map((a) => a.trim())
+        .filter(Boolean);
     }
     if (!Array.isArray(targetAudience) || targetAudience.length === 0) {
       targetAudience = [];
@@ -173,9 +187,8 @@ export default function CourseApprovalDetails() {
       setLoading(true);
       const fromState = location.state?.course;
 
-      // Try API first for complete data (with modules & lessons)
       try {
-        const response = await courseAPI.getCourseById(id);
+        const response = await courseApprovalAPI.getCourseById(id);
         const data = response?.data || response?.course || response;
         const normalized = normalize(data);
         if (normalized) {
@@ -183,10 +196,12 @@ export default function CourseApprovalDetails() {
           return;
         }
       } catch (apiErr) {
-        console.warn("API fetch failed, using navigation state:", apiErr.message);
+        console.warn(
+          "API fetch failed, using navigation state:",
+          apiErr.message,
+        );
       }
 
-      // Fallback to navigation state
       if (fromState) {
         setCourse(normalize(fromState));
         return;
@@ -216,7 +231,7 @@ export default function CourseApprovalDetails() {
     if (!course) return;
     try {
       setActionLoading(true);
-      await courseAPI.approveCourse(course.id);
+      await courseApprovalAPI.approveCourse(course.id);
       toast({
         title: "Course approved",
         description: `"${course.title}" has been approved successfully.`,
@@ -244,7 +259,7 @@ export default function CourseApprovalDetails() {
     if (!course || !adminNote.trim()) return;
     try {
       setActionLoading(true);
-      await courseAPI.rejectCourse(course.id, adminNote);
+      await courseApprovalAPI.rejectCourse(course.id, adminNote);
       toast({
         title: "Course rejected",
         description: `"${course.title}" has been rejected.`,
@@ -271,9 +286,16 @@ export default function CourseApprovalDetails() {
     }
   };
 
+  /* ── open lesson preview ───────────────────────────────────── */
   const openLessonPreview = (lesson) => {
     setSelectedLesson(lesson);
     onPreviewOpen();
+  };
+
+  /* ── open quiz preview (from inside LessonPreviewModal) ────── */
+  const openQuizPreview = (quiz) => {
+    setSelectedQuiz(quiz);
+    onQuizPreviewOpen();
   };
 
   /* ── loading ───────────────────────────────────────────────── */
@@ -324,7 +346,7 @@ export default function CourseApprovalDetails() {
 
       <Box
         ml={{ base: 0, md: "256px" }}
-        pt="80px"
+        pt="20px"
         pb="100px"
         px={{ base: 4, md: 8 }}
       >
@@ -353,7 +375,6 @@ export default function CourseApprovalDetails() {
               </Badge>
             </HStack>
 
-            {/* Quick stats */}
             <HStack fontSize="sm" color={muted} spacing={4}>
               <Text>{course.totalModules} modules</Text>
               <Text>{course.totalLessons} lessons</Text>
@@ -380,7 +401,6 @@ export default function CourseApprovalDetails() {
                 </Text>
               </HStack>
 
-              {/* Description card */}
               <Box
                 bg={card}
                 borderWidth="1px"
@@ -407,7 +427,6 @@ export default function CourseApprovalDetails() {
                     borderRadius="xl"
                     overflow="hidden"
                   >
-                    {/* Module header */}
                     <Flex
                       px={5}
                       py={4}
@@ -438,7 +457,6 @@ export default function CourseApprovalDetails() {
                       </Text>
                     </Flex>
 
-                    {/* Lessons */}
                     <VStack align="stretch" spacing={0}>
                       {module.lessons.map((lesson) => (
                         <Flex
@@ -450,8 +468,9 @@ export default function CourseApprovalDetails() {
                           borderBottomWidth="1px"
                           borderColor={border}
                           _last={{ borderBottomWidth: 0 }}
-                          _hover={{ bg: moduleBg }}
+                          _hover={{ bg: moduleBg, cursor: "pointer" }}
                           transition="background 0.15s"
+                          onClick={() => openLessonPreview(lesson)}
                         >
                           <HStack spacing={3}>
                             <Flex
@@ -477,16 +496,17 @@ export default function CourseApprovalDetails() {
                             </Box>
                           </HStack>
 
-                          {lesson.previewUrl && (
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              leftIcon={<PlayCircleIcon boxSize={4} />}
-                              onClick={() => openLessonPreview(lesson)}
-                            >
-                              Preview
-                            </Button>
-                          )}
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            leftIcon={<PlayCircleIcon boxSize={4} />}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openLessonPreview(lesson);
+                            }}
+                          >
+                            Review
+                          </Button>
                         </Flex>
                       ))}
 
@@ -527,7 +547,6 @@ export default function CourseApprovalDetails() {
                 borderRadius="xl"
                 overflow="hidden"
               >
-                {/* Thumbnail */}
                 {course.thumbnail ? (
                   <Image
                     src={course.thumbnail}
@@ -554,7 +573,6 @@ export default function CourseApprovalDetails() {
                     Course Summary
                   </Heading>
 
-                  {/* Price */}
                   <HStack
                     justify="space-between"
                     py={3}
@@ -569,7 +587,6 @@ export default function CourseApprovalDetails() {
                     </Text>
                   </HStack>
 
-                  {/* Instructor */}
                   <HStack
                     justify="space-between"
                     py={3}
@@ -598,7 +615,6 @@ export default function CourseApprovalDetails() {
                     </HStack>
                   </HStack>
 
-                  {/* Category */}
                   <HStack
                     justify="space-between"
                     py={3}
@@ -613,7 +629,6 @@ export default function CourseApprovalDetails() {
                     </Badge>
                   </HStack>
 
-                  {/* Level */}
                   <HStack
                     justify="space-between"
                     py={3}
@@ -628,7 +643,6 @@ export default function CourseApprovalDetails() {
                     </Text>
                   </HStack>
 
-                  {/* Stats */}
                   <HStack
                     justify="space-between"
                     py={3}
@@ -644,21 +658,15 @@ export default function CourseApprovalDetails() {
                     </Text>
                   </HStack>
 
-                  {/* Status */}
                   <HStack justify="space-between" py={3}>
                     <Text fontSize="sm" color={muted}>
                       Status
                     </Text>
-                    <Badge
-                      colorScheme={st.scheme}
-                      borderRadius="full"
-                      px={2}
-                    >
+                    <Badge colorScheme={st.scheme} borderRadius="full" px={2}>
                       {st.label}
                     </Badge>
                   </HStack>
 
-                  {/* Target Audience */}
                   {course.targetAudience.length > 0 && (
                     <Box pt={3} borderTopWidth="1px" borderColor={border}>
                       <Text fontSize="sm" fontWeight="bold" mb={2}>
@@ -680,7 +688,6 @@ export default function CourseApprovalDetails() {
                     </Box>
                   )}
 
-                  {/* Admin note (if rejected) */}
                   {course.adminNote && course.status === "rejected" && (
                     <Box
                       mt={4}
@@ -733,12 +740,7 @@ export default function CourseApprovalDetails() {
           <HStack fontSize="sm" color={muted} spacing={3}>
             <Text>
               Status:{" "}
-              <Badge
-                colorScheme={st.scheme}
-                borderRadius="full"
-                px={2}
-                ml={1}
-              >
+              <Badge colorScheme={st.scheme} borderRadius="full" px={2} ml={1}>
                 {st.label}
               </Badge>
             </Text>
@@ -799,7 +801,7 @@ export default function CourseApprovalDetails() {
         </Flex>
       </Box>
 
-      {/*Approve Confirmation Modal */}
+      {/* ── Approve Confirmation Modal ──────────────────────────── */}
       <Modal isOpen={isApproveOpen} onClose={onApproveClose} isCentered>
         <ModalOverlay />
         <ModalContent>
@@ -809,7 +811,7 @@ export default function CourseApprovalDetails() {
             <Text>
               Are you sure you want to approve{" "}
               <Text as="span" fontWeight="bold">
-                "{course.title}"
+                &quot;{course.title}&quot;
               </Text>
               ?
             </Text>
@@ -833,7 +835,7 @@ export default function CourseApprovalDetails() {
         </ModalContent>
       </Modal>
 
-      {/* Reject Modal*/}
+      {/* ── Reject Modal ────────────────────────────────────────── */}
       <Modal isOpen={isRejectOpen} onClose={onRejectClose} isCentered size="lg">
         <ModalOverlay />
         <ModalContent>
@@ -843,7 +845,7 @@ export default function CourseApprovalDetails() {
             <Text mb={3}>
               Please provide a reason for rejecting{" "}
               <Text as="span" fontWeight="bold">
-                "{course.title}"
+                &quot;{course.title}&quot;
               </Text>
               . The instructor will be able to see this note.
             </Text>
@@ -870,53 +872,20 @@ export default function CourseApprovalDetails() {
         </ModalContent>
       </Modal>
 
-      {/* Lesson Preview Modal*/}
-      <Modal
+      {/* ── Lesson Preview Modal (extracted component) ──────────── */}
+      <LessonPreviewModal
         isOpen={isPreviewOpen}
         onClose={onPreviewClose}
-        size="4xl"
-        isCentered
-      >
-        <ModalOverlay />
-        <ModalContent>
-          <ModalHeader>
-            {selectedLesson?.title || "Lesson Preview"}
-          </ModalHeader>
-          <ModalCloseButton />
-          <ModalBody pb={6}>
-            {selectedLesson?.previewUrl ? (
-              <Box borderRadius="lg" overflow="hidden" mb={4}>
-                <Box
-                  as="iframe"
-                  title={selectedLesson.title}
-                  src={selectedLesson.previewUrl}
-                  width="100%"
-                  height="420px"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                />
-              </Box>
-            ) : (
-              <Box
-                h="240px"
-                bg={noVideoBg}
-                borderRadius="lg"
-                display="flex"
-                alignItems="center"
-                justifyContent="center"
-                mb={4}
-              >
-                <Text color={muted}>No video preview available.</Text>
-              </Box>
-            )}
-            {selectedLesson?.description && (
-              <Text fontSize="sm" color={muted}>
-                {selectedLesson.description}
-              </Text>
-            )}
-          </ModalBody>
-        </ModalContent>
-      </Modal>
+        lesson={selectedLesson}
+        onOpenQuizPreview={openQuizPreview}
+      />
+
+      {/* ── Quiz Preview Modal (extracted component) ────────────── */}
+      <QuizPreviewModal
+        isOpen={isQuizPreviewOpen}
+        onClose={onQuizPreviewClose}
+        quiz={selectedQuiz}
+      />
     </Box>
   );
 }
