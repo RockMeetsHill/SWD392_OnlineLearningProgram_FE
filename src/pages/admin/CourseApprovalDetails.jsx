@@ -239,7 +239,7 @@ export default function CourseApprovalDetails() {
         duration: 3000,
         isClosable: true,
       });
-      setCourse((prev) => ({ ...prev, status: "approved_upload" }));
+      setCourse((prev) => ({ ...prev, status: "published" }));
       onApproveClose();
     } catch (error) {
       toast({

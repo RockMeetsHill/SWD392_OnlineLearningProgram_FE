@@ -414,7 +414,7 @@ const RevenueTracking = () => {
                         <Th isNumeric>Total Amount</Th>
                         <Th>Payment Method</Th>
                         <Th>Created At</Th>
-                        <Th width="50px"></Th>
+                        {/* <Th width="50px"></Th> */}
                       </Tr>
                     </Thead>
                     <Tbody>
@@ -465,7 +465,7 @@ const RevenueTracking = () => {
                           </Td>
                           <Td>{o.paymentMethod || "-"}</Td>
                           <Td>{new Date(o.createdAt).toLocaleString()}</Td>
-                          <Td>
+                          {/* <Td>
                             <Menu>
                               <MenuButton
                                 as={IconButton}
@@ -486,7 +486,7 @@ const RevenueTracking = () => {
                                 </MenuItem>
                               </MenuList>
                             </Menu>
-                          </Td>
+                          </Td> */}
                         </Tr>
                       ))}
                     </Tbody>

@@ -69,10 +69,8 @@ const statusStyle = (raw) => {
 const STATUS_OPTIONS = [
   { value: "All", label: "Status: All" },
   { value: "pending_review", label: "Pending Review" },
-  { value: "approved_upload", label: "Approved" },
   { value: "published", label: "Published" },
   { value: "rejected", label: "Rejected" },
-  { value: "draft", label: "Draft" },
 ];
 
 export default function CourseApprovals() {
@@ -155,16 +153,18 @@ export default function CourseApprovals() {
 
   const filtered = useMemo(() => {
     const text = q.trim().toLowerCase();
-    return rows.filter((r) => {
-      const matchText =
-        !text ||
-        r.courseName.toLowerCase().includes(text) ||
-        r.instructor.toLowerCase().includes(text);
-      const matchCategory =
-        category === "All Categories" || r.category === category;
-      const matchStatus = status === "All" || r.status === status;
-      return matchText && matchCategory && matchStatus;
-    });
+    return rows
+      .filter((r) => r.status !== "draft") // Ẩn course có status là draft
+      .filter((r) => {
+        const matchText =
+          !text ||
+          r.courseName.toLowerCase().includes(text) ||
+          r.instructor.toLowerCase().includes(text);
+        const matchCategory =
+          category === "All Categories" || r.category === category;
+        const matchStatus = status === "All" || r.status === status;
+        return matchText && matchCategory && matchStatus;
+      });
   }, [rows, q, category, status]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
@@ -175,7 +175,7 @@ export default function CourseApprovals() {
   const countByStatus = (s) => rows.filter((r) => r.status === s).length;
 
   const pendingCount = countByStatus("pending_review");
-  const approvedCount = countByStatus("approved_upload");
+  // const approvedCount = countByStatus("approved_upload");
   const publishedCount = countByStatus("published");
   const rejectedCount = countByStatus("rejected");
 
@@ -268,9 +268,6 @@ export default function CourseApprovals() {
             <HStack flexWrap="wrap">
               <Badge px={3} py={1.5} borderRadius="full" colorScheme="yellow">
                 {pendingCount} Pending
-              </Badge>
-              <Badge px={3} py={1.5} borderRadius="full" colorScheme="green">
-                {approvedCount} Approved
               </Badge>
               <Badge px={3} py={1.5} borderRadius="full" colorScheme="purple">
                 {publishedCount} Published

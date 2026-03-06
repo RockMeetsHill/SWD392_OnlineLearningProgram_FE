@@ -48,6 +48,7 @@ import {
   getPayrollSummary,
   markBatchPaid,
 } from "../../services/admin/payrollService";
+import { Tooltip } from "@chakra-ui/react";
 
 const WalletIcon = (props) => (
   <Icon viewBox="0 0 24 24" {...props}>
@@ -349,15 +350,22 @@ export default function InstructorPayroll() {
                   Generate Payroll
                 </Button>
               ) : (
-                <Badge
-                  colorScheme="green"
-                  fontSize="sm"
-                  px={3}
-                  py={2}
-                  borderRadius="md"
+                <Tooltip
+                  label="Salary for this month has been processed. Please wait until next month for the next payroll cycle."
+                  hasArrow
+                  placement="top"
                 >
-                  ✓ Payroll generated
-                </Badge>
+                  <Badge
+                    colorScheme="green"
+                    fontSize="sm"
+                    px={3}
+                    py={2}
+                    borderRadius="md"
+                    cursor="pointer"
+                  >
+                    ✓ Payroll generated
+                  </Badge>
+                </Tooltip>
               )}
               <Button
                 leftIcon={<DownloadIcon />}
@@ -583,9 +591,20 @@ export default function InstructorPayroll() {
                                 Confirm Payment
                               </Button>
                             ) : isPaid ? (
-                              <Button size="sm" variant="ghost" isDisabled>
-                                Paid ✓
-                              </Button>
+                              <Tooltip
+                                label="Salary for this month has been processed. Please wait until next month for the next payroll cycle."
+                                hasArrow
+                                placement="top"
+                              >
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  isDisabled
+                                  cursor="not-allowed"
+                                >
+                                  Paid ✓
+                                </Button>
+                              </Tooltip>
                             ) : (
                               <Text fontSize="xs" color={muted}>
                                 Generate payroll first
