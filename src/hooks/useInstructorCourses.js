@@ -11,6 +11,7 @@ export const useInstructorCourses = (instructorId, statusFilter = "") => {
     const [selectedCourse, setSelectedCourse] = useState(null);
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
+    const [publishing, setPublishing] = useState(false);
     const [revising, setRevising] = useState(false);
     const toast = useToast();
 
@@ -79,6 +80,39 @@ export const useInstructorCourses = (instructorId, statusFilter = "") => {
         }
     };
 
+    // Publish course directly (draft -> published)
+    const publishCourse = async (courseId) => {
+        try {
+            setPublishing(true);
+            const updatedCourse = await courseAPI.publishCourse(courseId);
+
+            setCourses((prev) =>
+                prev.map((c) => (c.courseId === updatedCourse.courseId ? updatedCourse : c))
+            );
+            setSelectedCourse(updatedCourse);
+
+            toast({
+                title: "Success",
+                description: "Course published successfully",
+                status: "success",
+                duration: 3000,
+            });
+
+            return updatedCourse;
+        } catch (error) {
+            console.error("Error publishing course:", error);
+            toast({
+                title: "Error",
+                description: error.message || "Failed to publish course",
+                status: "error",
+                duration: 3000,
+            });
+            throw error;
+        } finally {
+            setPublishing(false);
+        }
+    };
+
     // Revise course
     const reviseCourse = async (courseId) => {
         try {
@@ -142,8 +176,10 @@ export const useInstructorCourses = (instructorId, statusFilter = "") => {
         setSelectedCourse,
         loading,
         submitting,
+        publishing,
         revising,
         submitForReview,
+        publishCourse,
         reviseCourse,
         refetch: fetchCourses,
         createCourse,

@@ -24,11 +24,13 @@ const DashboardHeader = ({
     onCourseChange,
     onStatusFilterChange,
     onSubmitForReview,
+    onPublish,
     onReviseCourse,
     onOpenCreateModal,
     onEditCourse,
     onDeleteCourse,
     submitting,
+    publishing,
     revising,
 }) => {
     const bgColor = useColorModeValue("white", "gray.800");
@@ -37,10 +39,9 @@ const DashboardHeader = ({
 
     const getStatusBadge = (status) => {
         const statusConfig = {
-            draft: { colorScheme: "gray", label: "Nháp" },
-            pending: { colorScheme: "yellow", label: "Chờ duyệt" },
-            approved: { colorScheme: "green", label: "Đã duyệt" },
-            rejected: { colorScheme: "red", label: "Từ chối" },
+            in_progress: { colorScheme: "gray", label: "Đang soạn" },
+            published: { colorScheme: "green", label: "Đã xuất bản" },
+            archived: { colorScheme: "orange", label: "Lưu trữ" },
         };
         const config = statusConfig[status] || { colorScheme: "gray", label: status };
         return <Badge colorScheme={config.colorScheme}>{config.label}</Badge>;
@@ -52,9 +53,8 @@ const DashboardHeader = ({
         onCourseChange(course || null);
     };
 
-    // Kiểm tra xem course có thể xóa được không (chỉ draft và rejected)
-    const canDelete = selectedCourse &&
-        (selectedCourse.status === "draft" || selectedCourse.status === "rejected");
+    // Chỉ cho xóa khi course đang soạn (chưa xuất bản)
+    const canDelete = selectedCourse && selectedCourse.status === "in_progress";
 
     return (
         <Box
@@ -115,7 +115,7 @@ const DashboardHeader = ({
                                         isDisabled={!canDelete}
                                     >
                                         Xóa khóa học
-                                        {!canDelete && " (Chỉ xóa được draft/rejected)"}
+                                        {!canDelete && " (Chỉ xóa được khi đang soạn)"}
                                     </MenuItem>
                                 </MenuList>
                             </Menu>
@@ -133,34 +133,21 @@ const DashboardHeader = ({
                         size="sm"
                     >
                         <option value="">Tất cả</option>
-                        <option value="draft">Nháp</option>
-                        <option value="pending">Chờ duyệt</option>
-                        <option value="approved">Đã duyệt</option>
-                        <option value="rejected">Từ chối</option>
+                        <option value="in_progress">Đang soạn</option>
+                        <option value="published">Đã xuất bản</option>
+                        <option value="archived">Lưu trữ</option>
                     </Select>
 
-                    {/* Submit/Revise buttons */}
-                    {selectedCourse?.status === "draft" && (
+                    {/* Chỉ xuất bản khi đang soạn */}
+                    {selectedCourse?.status === "in_progress" && (
                         <Button
                             colorScheme="blue"
                             size="sm"
-                            onClick={() => onSubmitForReview(selectedCourse.courseId)}
-                            isLoading={submitting}
-                            loadingText="Đang gửi..."
+                            onClick={() => onPublish?.(selectedCourse.courseId)}
+                            isLoading={publishing}
+                            loadingText="Đang xuất bản..."
                         >
-                            Gửi duyệt
-                        </Button>
-                    )}
-
-                    {selectedCourse?.status === "rejected" && (
-                        <Button
-                            colorScheme="orange"
-                            size="sm"
-                            onClick={() => onReviseCourse(selectedCourse.courseId)}
-                            isLoading={revising}
-                            loadingText="Đang xử lý..."
-                        >
-                            Chỉnh sửa lại
+                            Xuất bản
                         </Button>
                     )}
 
