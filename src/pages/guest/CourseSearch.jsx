@@ -120,6 +120,7 @@ const CourseCard = ({ course, onClick, onAddToCart }) => {
       <Box position="relative" h="48" overflow="hidden">
         <Image
           src={
+            course.thumbnailUrl ||
             course.thumbnail ||
             course.image ||
             "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=400"
@@ -681,7 +682,7 @@ const CourseSearch = () => {
         courseId: course.courseId,
         price: course.price,
         title: course.title,
-        thumbnail: course.thumbnail,
+        thumbnail: course.thumbnailUrl || course.thumbnail,
         quantity: 1,
         timestamp: new Date().toISOString(),
       };

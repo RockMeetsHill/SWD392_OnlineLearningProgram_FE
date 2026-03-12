@@ -37,7 +37,6 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
   SearchIcon,
-  ViewIcon,
 } from "@chakra-ui/icons";
 import AdminNavbar from "../../components/admin/AdminNavbar";
 import AdminSidebar from "../../components/admin/AdminSidebar";
@@ -53,11 +52,9 @@ const money = (v) =>
 
 /* ── status helpers ─────────────────────────────────────────── */
 const STATUS_MAP = {
-  draft: { scheme: "gray", label: "Draft" },
-  pending_review: { scheme: "yellow", label: "Pending Review" },
-  approved_upload: { scheme: "green", label: "Approved" },
-  rejected: { scheme: "red", label: "Rejected" },
-  published: { scheme: "purple", label: "Published" },
+  in_progress: { scheme: "gray", label: "Đang soạn" },
+  published: { scheme: "green", label: "Đã xuất bản" },
+  archived: { scheme: "orange", label: "Lưu trữ" },
 };
 
 const statusStyle = (raw) => {
@@ -68,9 +65,9 @@ const statusStyle = (raw) => {
 /* ── status options shown in filter dropdown ─────────────────── */
 const STATUS_OPTIONS = [
   { value: "All", label: "Status: All" },
-  { value: "pending_review", label: "Pending Review" },
-  { value: "published", label: "Published" },
-  { value: "rejected", label: "Rejected" },
+  { value: "in_progress", label: "Đang soạn" },
+  { value: "published", label: "Đã xuất bản" },
+  { value: "archived", label: "Lưu trữ" },
 ];
 
 export default function CourseApprovals() {
@@ -79,13 +76,13 @@ export default function CourseApprovals() {
   const [actionLoading, setActionLoading] = useState(null);
   const [q, setQ] = useState("");
   const [category, setCategory] = useState("All Categories");
-  const [status, setStatus] = useState("All");
+  const [status, setStatus] = useState("published");
   const [page, setPage] = useState(1);
 
-  // Reject modal
+  // Flag modal
   const { isOpen, onOpen, onClose } = useDisclosure();
-  const [rejectCourseId, setRejectCourseId] = useState(null);
-  const [adminNote, setAdminNote] = useState("");
+  const [flagCourseId, setFlagCourseId] = useState(null);
+  const [flagReason, setFlagReason] = useState("");
 
   const bg = useColorModeValue("gray.50", "gray.900");
   const card = useColorModeValue("white", "gray.800");
@@ -114,7 +111,8 @@ export default function CourseApprovals() {
           c.instructor?.avatar || c.instructor?.profileImage || "",
         category: c.category || c.level || "Uncategorized",
         price: c.price ?? 0,
-        status: c.status || "draft",
+        status: c.status || "in_progress",
+        contentFlagged: c.contentFlagged ?? false,
         thumbnail:
           c.thumbnailUrl || c.thumbnail || c.image || c.coverImage || "",
         description: c.description || "",
@@ -153,18 +151,16 @@ export default function CourseApprovals() {
 
   const filtered = useMemo(() => {
     const text = q.trim().toLowerCase();
-    return rows
-      .filter((r) => r.status !== "draft") // Ẩn course có status là draft
-      .filter((r) => {
-        const matchText =
-          !text ||
-          r.courseName.toLowerCase().includes(text) ||
-          r.instructor.toLowerCase().includes(text);
-        const matchCategory =
-          category === "All Categories" || r.category === category;
-        const matchStatus = status === "All" || r.status === status;
-        return matchText && matchCategory && matchStatus;
-      });
+    return rows.filter((r) => {
+      const matchText =
+        !text ||
+        r.courseName.toLowerCase().includes(text) ||
+        r.instructor.toLowerCase().includes(text);
+      const matchCategory =
+        category === "All Categories" || r.category === category;
+      const matchStatus = status === "All" || r.status === status;
+      return matchText && matchCategory && matchStatus;
+    });
   }, [rows, q, category, status]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
@@ -174,28 +170,34 @@ export default function CourseApprovals() {
 
   const countByStatus = (s) => rows.filter((r) => r.status === s).length;
 
-  const pendingCount = countByStatus("pending_review");
-  // const approvedCount = countByStatus("approved_upload");
+  const inProgressCount = countByStatus("in_progress");
   const publishedCount = countByStatus("published");
-  const rejectedCount = countByStatus("rejected");
+  const archivedCount = countByStatus("archived");
 
   /* ── actions ───────────────────────────────────────────────── */
-  const handleApprove = async (courseId) => {
+  const handleOpenFlag = (courseId) => {
+    setFlagCourseId(courseId);
+    setFlagReason("");
+    onOpen();
+  };
+
+  const handleConfirmFlag = async () => {
+    if (!flagCourseId) return;
     try {
-      setActionLoading(courseId);
-      await courseAPI.approveCourse(courseId);
+      setActionLoading(flagCourseId);
+      await courseAPI.flagCourse(flagCourseId, { reason: flagReason });
       toast({
-        title: "Course approved",
-        description: "The course has been approved successfully.",
-        status: "success",
+        title: "Course flagged",
+        description: "Course has been flagged as inappropriate.",
+        status: "warning",
         duration: 3000,
         isClosable: true,
       });
-      // Refresh from server to get accurate status
+      onClose();
       await fetchCourses();
     } catch (error) {
       toast({
-        title: "Failed to approve course",
+        title: "Failed to flag course",
         description: error.message,
         status: "error",
         duration: 4000,
@@ -206,29 +208,21 @@ export default function CourseApprovals() {
     }
   };
 
-  const handleOpenReject = (courseId) => {
-    setRejectCourseId(courseId);
-    setAdminNote("");
-    onOpen();
-  };
-
-  const handleConfirmReject = async () => {
-    if (!rejectCourseId) return;
+  const handleUnflag = async (courseId) => {
     try {
-      setActionLoading(rejectCourseId);
-      await courseAPI.rejectCourse(rejectCourseId, adminNote);
+      setActionLoading(courseId);
+      await courseAPI.unflagCourse(courseId);
       toast({
-        title: "Course rejected",
-        description: "The course has been rejected.",
-        status: "info",
+        title: "Flag removed",
+        description: "Course is no longer flagged.",
+        status: "success",
         duration: 3000,
         isClosable: true,
       });
-      onClose();
       await fetchCourses();
     } catch (error) {
       toast({
-        title: "Failed to reject course",
+        title: "Failed to unflag course",
         description: error.message,
         status: "error",
         duration: 4000,
@@ -266,14 +260,14 @@ export default function CourseApprovals() {
               </Text>
             </Box>
             <HStack flexWrap="wrap">
-              <Badge px={3} py={1.5} borderRadius="full" colorScheme="yellow">
-                {pendingCount} Pending
+              <Badge px={3} py={1.5} borderRadius="full" colorScheme="gray">
+                {inProgressCount} Đang soạn
               </Badge>
-              <Badge px={3} py={1.5} borderRadius="full" colorScheme="purple">
-                {publishedCount} Published
+              <Badge px={3} py={1.5} borderRadius="full" colorScheme="green">
+                {publishedCount} Đã xuất bản
               </Badge>
-              <Badge px={3} py={1.5} borderRadius="full" colorScheme="red">
-                {rejectedCount} Rejected
+              <Badge px={3} py={1.5} borderRadius="full" colorScheme="orange">
+                {archivedCount} Lưu trữ
               </Badge>
             </HStack>
           </Flex>
@@ -377,6 +371,7 @@ export default function CourseApprovals() {
                       <Th>Category</Th>
                       <Th textAlign="right">Price</Th>
                       <Th>Status</Th>
+                      <Th>Flagged</Th>
                       <Th textAlign="center">Modules</Th>
                       <Th textAlign="right">Actions</Th>
                     </Tr>
@@ -384,7 +379,6 @@ export default function CourseApprovals() {
                   <Tbody>
                     {items.map((r) => {
                       const st = statusStyle(r.status);
-                      const canDecide = r.status === "pending_review";
                       const isActing = actionLoading === r.id;
 
                       return (
@@ -466,6 +460,15 @@ export default function CourseApprovals() {
                               {st.label}
                             </Badge>
                           </Td>
+                          <Td>
+                            {r.contentFlagged ? (
+                              <Badge colorScheme="red" borderRadius="full" px={2}>
+                                Flagged
+                              </Badge>
+                            ) : (
+                              <Text fontSize="sm" color={muted}>—</Text>
+                            )}
+                          </Td>
                           <Td textAlign="center">
                             <Text fontSize="sm">
                               {r.modulesCount} modules • {r.lessonsCount}{" "}
@@ -474,26 +477,29 @@ export default function CourseApprovals() {
                           </Td>
                           <Td textAlign="right">
                             <HStack justify="flex-end" spacing={2}>
-                              <Button
-                                size="sm"
-                                colorScheme="green"
-                                isDisabled={!canDecide || isActing}
-                                isLoading={canDecide && isActing}
-                                opacity={canDecide ? 1 : 0.45}
-                                onClick={() => handleApprove(r.id)}
-                              >
-                                Approve
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                colorScheme="red"
-                                isDisabled={!canDecide || isActing}
-                                opacity={canDecide ? 1 : 0.45}
-                                onClick={() => handleOpenReject(r.id)}
-                              >
-                                Reject
-                              </Button>
+                              {r.contentFlagged ? (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  colorScheme="orange"
+                                  isDisabled={isActing}
+                                  isLoading={isActing}
+                                  onClick={() => handleUnflag(r.id)}
+                                >
+                                  Bỏ cờ
+                                </Button>
+                              ) : (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  colorScheme="red"
+                                  isDisabled={isActing}
+                                  isLoading={isActing}
+                                  onClick={() => handleOpenFlag(r.id)}
+                                >
+                                  Đánh cờ
+                                </Button>
+                              )}
                             </HStack>
                           </Td>
                         </Tr>
@@ -545,35 +551,33 @@ export default function CourseApprovals() {
         </VStack>
       </Box>
 
-      {/* Reject Modal */}
+      {/* Flag Modal */}
       <Modal isOpen={isOpen} onClose={onClose} isCentered>
         <ModalOverlay />
         <ModalContent>
-          <ModalHeader>Reject Course</ModalHeader>
+          <ModalHeader>Đánh cờ nội dung không phù hợp</ModalHeader>
           <ModalCloseButton />
           <ModalBody>
             <Text mb={3}>
-              Please provide a reason for rejecting this course. The instructor
-              will be able to see this note.
+              Nêu lý do đánh cờ (tùy chọn). Course bị đánh cờ sẽ không hiển thị trên danh sách công khai.
             </Text>
             <Textarea
-              placeholder="Enter rejection reason..."
-              value={adminNote}
-              onChange={(e) => setAdminNote(e.target.value)}
+              placeholder="Lý do đánh cờ..."
+              value={flagReason}
+              onChange={(e) => setFlagReason(e.target.value)}
               rows={4}
             />
           </ModalBody>
           <ModalFooter>
             <Button variant="ghost" mr={3} onClick={onClose}>
-              Cancel
+              Hủy
             </Button>
             <Button
               colorScheme="red"
-              onClick={handleConfirmReject}
-              isLoading={actionLoading === rejectCourseId}
-              isDisabled={!adminNote.trim()}
+              onClick={handleConfirmFlag}
+              isLoading={actionLoading === flagCourseId}
             >
-              Confirm Reject
+              Đánh cờ
             </Button>
           </ModalFooter>
         </ModalContent>

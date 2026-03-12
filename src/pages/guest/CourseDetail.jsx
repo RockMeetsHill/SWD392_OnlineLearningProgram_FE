@@ -251,7 +251,7 @@ const CourseDetail = () => {
         courseId: id,
         price: course.price,
         title: course.title,
-        thumbnail: course.thumbnail,
+        thumbnail: course.thumbnailUrl || course.thumbnail,
         quantity: 1,
         timestamp: new Date().toISOString(),
       };
@@ -653,6 +653,7 @@ const CourseDetail = () => {
                   <Box position="relative" cursor="pointer" role="group">
                     <Image
                       src={
+                        course.thumbnailUrl ||
                         course.image ||
                         course.thumbnail ||
                         "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=800"
