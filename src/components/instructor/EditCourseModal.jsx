@@ -14,18 +14,21 @@ import {
     Image,
     Input,
     Textarea,
+    Select,
     VStack,
     useToast,
     FormErrorMessage,
 } from "@chakra-ui/react";
-// Sửa import đúng
 import { courseAPI } from "../../services/courseService";
-import { PRIMARY_COLOR } from "../../constants/instructor";
+import { COURSE_CATEGORY_OPTIONS, LEVEL_TARGET_OPTIONS, PRIMARY_COLOR } from "../../constants/instructor";
 
 const EditCourseModal = ({ isOpen, onClose, course, onCourseUpdated }) => {
     const [formData, setFormData] = useState({
         title: "",
         description: "",
+        price: "",
+        category: "Communication",
+        levelTarget: "A1",
     });
     const [thumbnailFile, setThumbnailFile] = useState(null);
     const [thumbnailPreview, setThumbnailPreview] = useState(null);
@@ -39,6 +42,9 @@ const EditCourseModal = ({ isOpen, onClose, course, onCourseUpdated }) => {
             setFormData({
                 title: course.title || "",
                 description: course.description || "",
+                price: course.price || "",
+                category: course.category || "Communication",
+                levelTarget: course.levelTarget || "A1",
             });
             setThumbnailFile(null);
             setThumbnailPreview(null);
@@ -100,6 +106,9 @@ const EditCourseModal = ({ isOpen, onClose, course, onCourseUpdated }) => {
             let updatedCourse = await courseAPI.updateCourse(course.courseId, {
                 title: formData.title.trim(),
                 description: formData.description.trim(),
+                price: formData.price === "" ? 0 : Number(formData.price),
+                category: formData.category,
+                levelTarget: formData.levelTarget,
             });
 
             if (thumbnailFile) {
@@ -143,7 +152,7 @@ const EditCourseModal = ({ isOpen, onClose, course, onCourseUpdated }) => {
     };
 
     const handleClose = () => {
-        setFormData({ title: "", description: "" });
+        setFormData({ title: "", description: "", price: "", category: "Communication", levelTarget: "A1" });
         setThumbnailFile(null);
         setThumbnailPreview(null);
         setErrors({});
@@ -178,12 +187,54 @@ const EditCourseModal = ({ isOpen, onClose, course, onCourseUpdated }) => {
                                 value={formData.description}
                                 onChange={handleChange}
                                 placeholder="Nhập mô tả khóa học"
-                                rows={5}
+                                rows={4}
                                 resize="vertical"
                             />
                             {errors.description && (
                                 <FormErrorMessage>{errors.description}</FormErrorMessage>
                             )}
+                        </FormControl>
+
+                        <FormControl>
+                            <FormLabel>Giá (VND)</FormLabel>
+                            <Input
+                                name="price"
+                                type="number"
+                                min={0}
+                                value={formData.price}
+                                onChange={handleChange}
+                                placeholder="0 để miễn phí"
+                            />
+                        </FormControl>
+
+                        <FormControl>
+                            <FormLabel>Danh mục</FormLabel>
+                            <Select
+                                name="category"
+                                value={formData.category}
+                                onChange={handleChange}
+                            >
+                                {COURSE_CATEGORY_OPTIONS.map((opt) => (
+                                    <option key={opt.value} value={opt.value}>
+                                        {opt.label}
+                                    </option>
+                                ))}
+                            </Select>
+                        </FormControl>
+
+                        <FormControl>
+                            <FormLabel>Mức độ</FormLabel>
+                            <Select
+                                name="levelTarget"
+                                value={formData.levelTarget}
+                                onChange={handleChange}
+                            >
+                                {LEVEL_TARGET_OPTIONS.map((opt) => (
+                                    <option key={opt.value} value={opt.value}>
+                                        {opt.label}
+                                    </option>
+                                ))}
+                            </Select>
                         </FormControl>
 
                         <FormControl>
