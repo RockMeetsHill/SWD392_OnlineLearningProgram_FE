@@ -12,7 +12,6 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import {
     SchoolIcon,
-    DashboardIcon,
     BookIcon,
     SettingsIcon,
     LogoutIcon,
@@ -33,7 +32,6 @@ const Sidebar = ({ activeTab, setActiveTab, isCollapsed, setIsCollapsed }) => {
     };
 
     const menuItems = [
-        { id: "dashboard", label: "Dashboard", icon: DashboardIcon },
         { id: "courses", label: "My Courses", icon: BookIcon },
     ];
 

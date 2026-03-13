@@ -35,8 +35,10 @@ const InstructorDashboard = () => {
         setSelectedCourse,
         loading,
         submitting,
+        publishing,
         revising,
         submitForReview,
+        publishCourse,
         reviseCourse,
         refetch,
     } = useInstructorCourses(user?.userId, statusFilter);
@@ -61,6 +63,10 @@ const InstructorDashboard = () => {
 
     const handleSubmitForReview = async (courseId) => {
         await submitForReview(courseId);
+    };
+
+    const handlePublish = async (courseId) => {
+        await publishCourse(courseId);
     };
 
     const handleReviseCourse = async (courseId) => {
@@ -140,11 +146,13 @@ const InstructorDashboard = () => {
                         onCourseChange={setSelectedCourse}
                         onStatusFilterChange={setStatusFilter}
                         onSubmitForReview={handleSubmitForReview}
+                        onPublish={handlePublish}
                         onReviseCourse={handleReviseCourse}
                         onOpenCreateModal={onCreateOpen}
                         onEditCourse={handleEditCourse}
                         onDeleteCourse={handleDeleteCourse}
                         submitting={submitting}
+                        publishing={publishing}
                         revising={revising}
                     />
 

@@ -110,8 +110,9 @@ const CreateQuizModal = ({ isOpen, onClose, lessonId, lessonTitle, onSuccess }) 
 
     const handleEditQuiz = (q) => {
         quizAPI.getQuizById(q.quizId).then((fullQuiz) => {
-            setQuiz(fullQuiz);
-            setQuestions(fullQuiz.questions || []);
+            const quizData = fullQuiz?.quiz ?? fullQuiz;
+            setQuiz(quizData);
+            setQuestions(quizData.questions || []);
             setView("questions");
         }).catch(() => toast({ title: "Lỗi", description: "Không tải được quiz", status: "error" }));
     };
@@ -157,8 +158,9 @@ const CreateQuizModal = ({ isOpen, onClose, lessonId, lessonTitle, onSuccess }) 
                 return null;
             }).then((fullQuiz) => {
                 if (fullQuiz) {
-                    setQuiz(fullQuiz);
-                    setQuestions(fullQuiz.questions ?? []);
+                    const quizData = fullQuiz.quiz ?? fullQuiz;
+                    setQuiz(quizData);
+                    setQuestions(quizData.questions ?? []);
                     setView("questions");
                 } else {
                     handleClose();
@@ -176,18 +178,20 @@ const CreateQuizModal = ({ isOpen, onClose, lessonId, lessonTitle, onSuccess }) 
     const handleQuestionAdded = () => {
         if (!quiz?.quizId) return;
         quizAPI.getQuizById(quiz.quizId).then((q) => {
-            setQuiz(q);
-            setQuestions(q.questions || []);
-        }).catch(() => {});
+            const quizData = q?.quiz ?? q;
+            setQuiz(quizData);
+            setQuestions(quizData.questions || []);
+        }).catch(() => { });
         onFormClose();
     };
 
     const handleRefreshQuestions = () => {
         if (!quiz?.quizId) return;
         quizAPI.getQuizById(quiz.quizId).then((q) => {
-            setQuiz(q);
-            setQuestions(q.questions || []);
-        }).catch(() => {});
+            const quizData = q?.quiz ?? q;
+            setQuiz(quizData);
+            setQuestions(quizData.questions || []);
+        }).catch(() => { });
     };
 
     const handleClose = () => {

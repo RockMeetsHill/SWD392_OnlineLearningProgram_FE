@@ -24,7 +24,7 @@ export const quizAPI = {
 
   getQuizById: async (quizId) => {
     const data = await fetchWithAuth(`${API_URL}/quizzes/${quizId}`, { method: "GET" });
-    return data.quiz != null ? data.quiz : data;
+    return data;
   },
 
   createQuiz: (lessonId, payload) =>

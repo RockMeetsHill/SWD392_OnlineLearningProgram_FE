@@ -165,6 +165,9 @@ const DashboardContent = ({ courseId, modules, loading, onToggleModule, onRefetc
                 onClose={() => setUploadVideoLesson(null)}
                 lessonId={uploadVideoLesson?.lessonId ?? uploadVideoLesson?.id}
                 lessonTitle={uploadVideoLesson?.title}
+                existingVideoUrl={uploadVideoLesson?.mediaUrl ||
+                    uploadVideoLesson?.lessonResources?.find(r => r.fileType === "video")?.fileUrl}
+                videoResourceId={uploadVideoLesson?.lessonResources?.find(r => r.fileType === "video")?.resourceId}
                 onSuccess={onRefetch}
             />
         </>

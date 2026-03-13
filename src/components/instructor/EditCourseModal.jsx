@@ -8,8 +8,10 @@ import {
     ModalFooter,
     ModalCloseButton,
     Button,
+    Box,
     FormControl,
     FormLabel,
+    Image,
     Input,
     Textarea,
     VStack,
@@ -25,6 +27,8 @@ const EditCourseModal = ({ isOpen, onClose, course, onCourseUpdated }) => {
         title: "",
         description: "",
     });
+    const [thumbnailFile, setThumbnailFile] = useState(null);
+    const [thumbnailPreview, setThumbnailPreview] = useState(null);
     const [errors, setErrors] = useState({});
     const [loading, setLoading] = useState(false);
     const toast = useToast();
@@ -36,6 +40,8 @@ const EditCourseModal = ({ isOpen, onClose, course, onCourseUpdated }) => {
                 title: course.title || "",
                 description: course.description || "",
             });
+            setThumbnailFile(null);
+            setThumbnailPreview(null);
             setErrors({});
         }
     }, [isOpen, course]);
@@ -73,16 +79,41 @@ const EditCourseModal = ({ isOpen, onClose, course, onCourseUpdated }) => {
         }
     };
 
+    const handleThumbnailChange = (e) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            setThumbnailFile(file);
+            const reader = new FileReader();
+            reader.onloadend = () => setThumbnailPreview(reader.result);
+            reader.readAsDataURL(file);
+        } else {
+            setThumbnailFile(null);
+            setThumbnailPreview(null);
+        }
+    };
+
     const handleSubmit = async () => {
         if (!validateForm()) return;
 
         setLoading(true);
         try {
-            // Sử dụng courseAPI.updateCourse
-            const updatedCourse = await courseAPI.updateCourse(course.courseId, {
+            let updatedCourse = await courseAPI.updateCourse(course.courseId, {
                 title: formData.title.trim(),
                 description: formData.description.trim(),
             });
+
+            if (thumbnailFile) {
+                try {
+                    updatedCourse = await courseAPI.uploadCourseThumbnail(course.courseId, thumbnailFile);
+                } catch (uploadErr) {
+                    toast({
+                        title: "Cập nhật thành công, ảnh bìa lỗi",
+                        description: uploadErr.message,
+                        status: "warning",
+                        duration: 4000,
+                    });
+                }
+            }
 
             toast({
                 title: "Cập nhật thành công!",
@@ -113,6 +144,8 @@ const EditCourseModal = ({ isOpen, onClose, course, onCourseUpdated }) => {
 
     const handleClose = () => {
         setFormData({ title: "", description: "" });
+        setThumbnailFile(null);
+        setThumbnailPreview(null);
         setErrors({});
         onClose();
     };
@@ -151,6 +184,26 @@ const EditCourseModal = ({ isOpen, onClose, course, onCourseUpdated }) => {
                             {errors.description && (
                                 <FormErrorMessage>{errors.description}</FormErrorMessage>
                             )}
+                        </FormControl>
+
+                        <FormControl>
+                            <FormLabel>Ảnh bìa</FormLabel>
+                            {(course?.thumbnailUrl || thumbnailPreview) && (
+                                <Box mb={2}>
+                                    <Image
+                                        src={thumbnailPreview || course.thumbnailUrl}
+                                        alt="Thumbnail"
+                                        maxH="120px"
+                                        borderRadius="md"
+                                    />
+                                </Box>
+                            )}
+                            <Input
+                                type="file"
+                                accept="image/*"
+                                onChange={handleThumbnailChange}
+                                pt={1}
+                            />
                         </FormControl>
                     </VStack>
                 </ModalBody>
