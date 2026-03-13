@@ -68,7 +68,7 @@ function InstructorManagement() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [togglingStatus, setTogglingStatus] = useState(null);
 
-  const itemsPerPage = 5;
+  const itemsPerPage = 10;
   const toast = useToast();
   const {
     isOpen: isEditOpen,

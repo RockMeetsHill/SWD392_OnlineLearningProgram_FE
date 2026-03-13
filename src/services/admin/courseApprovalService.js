@@ -128,6 +128,21 @@ export const courseApprovalAPI = {
     });
   },
 
+  // Flag course content as inappropriate (admin only)
+  flagCourse: async (courseId, { reason } = {}) => {
+    return fetchWithAuth(`${API_URL}/courses/${courseId}/flag`, {
+      method: "POST",
+      body: JSON.stringify({ reason: reason || "" }),
+    });
+  },
+
+  // Unflag course (admin only)
+  unflagCourse: async (courseId) => {
+    return fetchWithAuth(`${API_URL}/courses/${courseId}/unflag`, {
+      method: "POST",
+    });
+  },
+
   // Get lesson details (includes resources + quizzes)
   getLessonById: async (lessonId) => {
     return fetchWithAuth(`${API_URL}/lessons/${lessonId}`, {

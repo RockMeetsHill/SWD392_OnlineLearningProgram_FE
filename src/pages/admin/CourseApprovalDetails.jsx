@@ -27,12 +27,13 @@ import {
   useToast,
   VStack,
 } from "@chakra-ui/react";
-import { ArrowBackIcon, CheckIcon, CloseIcon } from "@chakra-ui/icons";
+import { ArrowBackIcon, CloseIcon } from "@chakra-ui/icons";
 import AdminNavbar from "../../components/admin/AdminNavbar";
 import AdminSidebar from "../../components/admin/AdminSidebar";
 import { courseApprovalAPI } from "../../services/admin/courseApprovalService";
 import LessonPreviewModal from "../../components/admin/LessonPreviewModal";
 import QuizPreviewModal from "../../components/admin/QuizPreviewModal";
+import FlagContentConfirmModal from "../../components/admin/FlagContentConfirmModal";
 
 /* ── Icons ──────────────────────────────────────────────────── */
 const PlayCircleIcon = (props) => (
@@ -51,11 +52,9 @@ const money = (v) =>
 
 /* ── status helpers ──────────────────────────────────────────── */
 const STATUS_MAP = {
-  draft: { scheme: "gray", label: "Draft" },
-  pending_review: { scheme: "yellow", label: "Pending Review" },
-  approved_upload: { scheme: "green", label: "Approved" },
-  rejected: { scheme: "red", label: "Rejected" },
-  published: { scheme: "purple", label: "Published" },
+  in_progress: { scheme: "gray", label: "Drafting" },
+  published: { scheme: "green", label: "Published" },
+  archived: { scheme: "orange", label: "Archived" },
 };
 
 const statusInfo = (raw) => {
@@ -89,18 +88,13 @@ export default function CourseApprovalDetails() {
     onClose: onQuizPreviewClose,
   } = useDisclosure();
 
-  // Approve / Reject modals
+  // Flag modal
   const {
-    isOpen: isRejectOpen,
-    onOpen: onRejectOpen,
-    onClose: onRejectClose,
+    isOpen: isFlagOpen,
+    onOpen: onFlagOpen,
+    onClose: onFlagClose,
   } = useDisclosure();
-  const {
-    isOpen: isApproveOpen,
-    onOpen: onApproveOpen,
-    onClose: onApproveClose,
-  } = useDisclosure();
-  const [adminNote, setAdminNote] = useState("");
+  const [flagReason, setFlagReason] = useState("");
 
   /* ── colors ────────────────────────────────────────────────── */
   const bg = useColorModeValue("gray.50", "gray.900");
@@ -119,7 +113,7 @@ export default function CourseApprovalDetails() {
         const lessons = (mod.lessons || mod.lectures || mod.items || []).map(
           (lesson, lIdx) => ({
             id: lesson.lessonId || lesson._id || lesson.id || `${idx}-${lIdx}`,
-            lessonId: lesson.lessonId || lesson._id || lesson.id || null,
+            lessonId: lesson.lessonId ?? lesson._id ?? lesson.id ?? null,
             code: lesson.code || `${idx + 1}.${lIdx + 1}`,
             title: lesson.title || lesson.name || `Lesson ${lIdx + 1}`,
             type: lesson.type || lesson.contentType || "Video",
@@ -160,7 +154,7 @@ export default function CourseApprovalDetails() {
     return {
       id: c.courseId || c._id || c.id,
       title: c.title || c.name || "",
-      status: c.status || "draft",
+      status: c.status || "in_progress",
       price: c.price ?? 0,
       instructor: c.instructor?.fullName || c.instructor?.name || "Unknown",
       instructorAvatar:
@@ -178,6 +172,7 @@ export default function CourseApprovalDetails() {
       createdAt: c.createdAt || "",
       updatedAt: c.updatedAt || "",
       adminNote: c.adminNote || c.admin_note || "",
+      contentFlagged: c.contentFlagged ?? false,
     };
   }, []);
 
@@ -226,24 +221,24 @@ export default function CourseApprovalDetails() {
     fetchDetail();
   }, [fetchDetail]);
 
-  /* ── approve ───────────────────────────────────────────────── */
-  const handleApprove = async () => {
+  /* ── flag / unflag ─────────────────────────────────────────── */
+  const handleConfirmFlag = async () => {
     if (!course) return;
     try {
       setActionLoading(true);
-      await courseApprovalAPI.approveCourse(course.id);
+      await courseApprovalAPI.flagCourse(course.id, { reason: flagReason });
       toast({
-        title: "Course approved",
-        description: `"${course.title}" has been approved successfully.`,
-        status: "success",
+        title: "Course flagged",
+        description: "Course has been flagged as inappropriate.",
+        status: "warning",
         duration: 3000,
         isClosable: true,
       });
-      setCourse((prev) => ({ ...prev, status: "published" }));
-      onApproveClose();
+      setCourse((prev) => ({ ...prev, contentFlagged: true }));
+      onFlagClose();
     } catch (error) {
       toast({
-        title: "Failed to approve course",
+        title: "Failed to flag course",
         description: error.message,
         status: "error",
         duration: 4000,
@@ -254,28 +249,22 @@ export default function CourseApprovalDetails() {
     }
   };
 
-  /* ── reject ────────────────────────────────────────────────── */
-  const handleConfirmReject = async () => {
-    if (!course || !adminNote.trim()) return;
+  const handleUnflag = async () => {
+    if (!course) return;
     try {
       setActionLoading(true);
-      await courseApprovalAPI.rejectCourse(course.id, adminNote);
+      await courseApprovalAPI.unflagCourse(course.id);
       toast({
-        title: "Course rejected",
-        description: `"${course.title}" has been rejected.`,
-        status: "info",
+        title: "Flag removed",
+        description: "Course is no longer flagged.",
+        status: "success",
         duration: 3000,
         isClosable: true,
       });
-      setCourse((prev) => ({
-        ...prev,
-        status: "rejected",
-        adminNote: adminNote,
-      }));
-      onRejectClose();
+      setCourse((prev) => ({ ...prev, contentFlagged: false }));
     } catch (error) {
       toast({
-        title: "Failed to reject course",
+        title: "Failed to unflag course",
         description: error.message,
         status: "error",
         duration: 4000,
@@ -288,6 +277,7 @@ export default function CourseApprovalDetails() {
 
   /* ── open lesson preview ───────────────────────────────────── */
   const openLessonPreview = (lesson) => {
+    if (!lesson?.lessonId) return;
     setSelectedLesson(lesson);
     onPreviewOpen();
   };
@@ -337,7 +327,6 @@ export default function CourseApprovalDetails() {
   }
 
   const st = statusInfo(course.status);
-  const canDecide = course.status === "pending_review";
 
   return (
     <Box bg={bg} minH="100vh">
@@ -500,6 +489,7 @@ export default function CourseApprovalDetails() {
                             size="sm"
                             variant="ghost"
                             leftIcon={<PlayCircleIcon boxSize={4} />}
+                            isDisabled={!lesson.lessonId}
                             onClick={(e) => {
                               e.stopPropagation();
                               openLessonPreview(lesson);
@@ -688,7 +678,7 @@ export default function CourseApprovalDetails() {
                     </Box>
                   )}
 
-                  {course.adminNote && course.status === "rejected" && (
+                  {course.adminNote && (
                     <Box
                       mt={4}
                       p={3}
@@ -744,6 +734,11 @@ export default function CourseApprovalDetails() {
                 {st.label}
               </Badge>
             </Text>
+            {course.contentFlagged && (
+              <Badge colorScheme="red" borderRadius="full" px={2}>
+                Flagged
+              </Badge>
+            )}
             {course.createdAt && (
               <Text>
                 • Submitted:{" "}
@@ -759,118 +754,45 @@ export default function CourseApprovalDetails() {
           </HStack>
 
           <HStack w={{ base: "100%", sm: "auto" }}>
-            {canDecide ? (
-              <>
-                <Button
-                  w={{ base: "full", sm: "160px" }}
-                  variant="outline"
-                  colorScheme="red"
-                  leftIcon={<CloseIcon />}
-                  isDisabled={actionLoading}
-                  onClick={() => {
-                    setAdminNote("");
-                    onRejectOpen();
-                  }}
-                >
-                  Reject Course
-                </Button>
-                <Button
-                  w={{ base: "full", sm: "160px" }}
-                  colorScheme="green"
-                  leftIcon={<CheckIcon />}
-                  isDisabled={actionLoading}
-                  onClick={onApproveOpen}
-                >
-                  Approve Course
-                </Button>
-              </>
+            {course.contentFlagged ? (
+              <Button
+                w={{ base: "full", sm: "160px" }}
+                variant="outline"
+                colorScheme="orange"
+                isDisabled={actionLoading}
+                isLoading={actionLoading}
+                onClick={handleUnflag}
+              >
+                Unflag
+              </Button>
             ) : (
-              <Text fontSize="sm" fontWeight="medium" color={muted}>
-                {course.status === "approved_upload"
-                  ? "✅ This course has been approved"
-                  : course.status === "rejected"
-                    ? "❌ This course has been rejected"
-                    : course.status === "published"
-                      ? "🟣 This course is published"
-                      : course.status === "draft"
-                        ? "📝 This course is still in draft"
-                        : "No actions available"}
-              </Text>
+              <Button
+                w={{ base: "full", sm: "160px" }}
+                variant="outline"
+                colorScheme="red"
+                leftIcon={<CloseIcon />}
+                isDisabled={actionLoading}
+                onClick={() => {
+                  setFlagReason("");
+                  onFlagOpen();
+                }}
+              >
+                Flag content
+              </Button>
             )}
           </HStack>
         </Flex>
       </Box>
 
-      {/* ── Approve Confirmation Modal ──────────────────────────── */}
-      <Modal isOpen={isApproveOpen} onClose={onApproveClose} isCentered>
-        <ModalOverlay />
-        <ModalContent>
-          <ModalHeader>Approve Course</ModalHeader>
-          <ModalCloseButton />
-          <ModalBody>
-            <Text>
-              Are you sure you want to approve{" "}
-              <Text as="span" fontWeight="bold">
-                &quot;{course.title}&quot;
-              </Text>
-              ?
-            </Text>
-            <Text mt={2} fontSize="sm" color={muted}>
-              The instructor will be notified and the course status will change
-              to Approved.
-            </Text>
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="ghost" mr={3} onClick={onApproveClose}>
-              Cancel
-            </Button>
-            <Button
-              colorScheme="green"
-              onClick={handleApprove}
-              isLoading={actionLoading}
-            >
-              Approve
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
-
-      {/* ── Reject Modal ────────────────────────────────────────── */}
-      <Modal isOpen={isRejectOpen} onClose={onRejectClose} isCentered size="lg">
-        <ModalOverlay />
-        <ModalContent>
-          <ModalHeader>Reject Course</ModalHeader>
-          <ModalCloseButton />
-          <ModalBody>
-            <Text mb={3}>
-              Please provide a reason for rejecting{" "}
-              <Text as="span" fontWeight="bold">
-                &quot;{course.title}&quot;
-              </Text>
-              . The instructor will be able to see this note.
-            </Text>
-            <Textarea
-              placeholder="Enter rejection reason (required)..."
-              value={adminNote}
-              onChange={(e) => setAdminNote(e.target.value)}
-              rows={5}
-            />
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="ghost" mr={3} onClick={onRejectClose}>
-              Cancel
-            </Button>
-            <Button
-              colorScheme="red"
-              onClick={handleConfirmReject}
-              isLoading={actionLoading}
-              isDisabled={!adminNote.trim()}
-            >
-              Confirm Reject
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
+      {/* ── Flag Modal ───────────────────────────────────────────── */}
+      <FlagContentConfirmModal
+        isOpen={isFlagOpen}
+        onClose={onFlagClose}
+        reason={flagReason}
+        onReasonChange={(e) => setFlagReason(e.target.value)}
+        onConfirm={handleConfirmFlag}
+        isLoading={actionLoading}
+      />
 
       {/* ── Lesson Preview Modal (extracted component) ──────────── */}
       <LessonPreviewModal
