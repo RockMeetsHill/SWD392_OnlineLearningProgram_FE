@@ -10,6 +10,7 @@ import {
   Button,
   FormControl,
   FormLabel,
+  FormErrorMessage,
   Input,
   InputGroup,
   InputRightElement,
@@ -33,10 +34,30 @@ function CreateInstructorModal({ isOpen, onClose, onCreated }) {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [emailError, setEmailError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
   const toast = useToast();
+
+  const isValidEmail = (email) => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  };
 
   const handleChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+    if (field === "email") {
+      if (value && !isValidEmail(value)) {
+        setEmailError("Please enter a valid email address.");
+      } else {
+        setEmailError("");
+      }
+    }
+    if (field === "password") {
+      if (value && value.length < 8) {
+        setPasswordError("Password must be at least 8 characters.");
+      } else {
+        setPasswordError("");
+      }
+    }
   };
 
   const resetForm = () => {
@@ -48,6 +69,8 @@ function CreateInstructorModal({ isOpen, onClose, onCreated }) {
       currentLevel: "A0",
     });
     setShowPassword(false);
+    setEmailError("");
+    setPasswordError("");
   };
 
   const handleClose = () => {
@@ -56,6 +79,9 @@ function CreateInstructorModal({ isOpen, onClose, onCreated }) {
   };
 
   const handleSave = async () => {
+    let hasError = false;
+    const errors = [];
+
     if (!formData.name || !formData.email || !formData.password) {
       toast({
         title: "Validation Error",
@@ -67,10 +93,22 @@ function CreateInstructorModal({ isOpen, onClose, onCreated }) {
       return;
     }
 
+    if (!isValidEmail(formData.email)) {
+      setEmailError("Please enter a valid email address.");
+      errors.push("Invalid email format.");
+      hasError = true;
+    }
+
     if (formData.password.length < 8) {
+      setPasswordError("Password must be at least 8 characters.");
+      errors.push("Password must be at least 8 characters.");
+      hasError = true;
+    }
+
+    if (hasError) {
       toast({
         title: "Validation Error",
-        description: "Password must be at least 8 characters.",
+        description: errors.join(" "),
         status: "error",
         duration: 3000,
         isClosable: true,
@@ -119,7 +157,7 @@ function CreateInstructorModal({ isOpen, onClose, onCreated }) {
                 onChange={(e) => handleChange("name", e.target.value)}
               />
             </FormControl>
-            <FormControl isRequired>
+            <FormControl isRequired isInvalid={!!emailError}>
               <FormLabel>Email</FormLabel>
               <Input
                 type="email"
@@ -127,8 +165,9 @@ function CreateInstructorModal({ isOpen, onClose, onCreated }) {
                 value={formData.email}
                 onChange={(e) => handleChange("email", e.target.value)}
               />
+              <FormErrorMessage>{emailError}</FormErrorMessage>
             </FormControl>
-            <FormControl isRequired>
+            <FormControl isRequired isInvalid={!!passwordError}>
               <FormLabel>Password</FormLabel>
               <InputGroup>
                 <Input
@@ -149,6 +188,7 @@ function CreateInstructorModal({ isOpen, onClose, onCreated }) {
                   />
                 </InputRightElement>
               </InputGroup>
+              <FormErrorMessage>{passwordError}</FormErrorMessage>
             </FormControl>
             <FormControl>
               <FormLabel>Phone Number</FormLabel>

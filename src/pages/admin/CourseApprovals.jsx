@@ -10,13 +10,6 @@ import {
   Input,
   InputGroup,
   InputLeftElement,
-  Modal,
-  ModalBody,
-  ModalCloseButton,
-  ModalContent,
-  ModalFooter,
-  ModalHeader,
-  ModalOverlay,
   Select,
   Spinner,
   Table,
@@ -24,7 +17,6 @@ import {
   Tbody,
   Td,
   Text,
-  Textarea,
   Th,
   Thead,
   Tr,
@@ -42,6 +34,8 @@ import AdminNavbar from "../../components/admin/AdminNavbar";
 import AdminSidebar from "../../components/admin/AdminSidebar";
 import { useNavigate } from "react-router-dom";
 import { courseAPI } from "../../services/courseService";
+import { courseApprovalAPI } from "../../services/admin/courseApprovalService";
+import FlagContentConfirmModal from "../../components/admin/FlagContentConfirmModal";
 
 const PAGE_SIZE = 10;
 
@@ -52,9 +46,9 @@ const money = (v) =>
 
 /* ── status helpers ─────────────────────────────────────────── */
 const STATUS_MAP = {
-  in_progress: { scheme: "gray", label: "Đang soạn" },
-  published: { scheme: "green", label: "Đã xuất bản" },
-  archived: { scheme: "orange", label: "Lưu trữ" },
+  in_progress: { scheme: "gray", label: "Drafting" },
+  published: { scheme: "green", label: "Published" },
+  archived: { scheme: "orange", label: "Archived" },
 };
 
 const statusStyle = (raw) => {
@@ -65,9 +59,8 @@ const statusStyle = (raw) => {
 /* ── status options shown in filter dropdown ─────────────────── */
 const STATUS_OPTIONS = [
   { value: "All", label: "Status: All" },
-  { value: "in_progress", label: "Đang soạn" },
-  { value: "published", label: "Đã xuất bản" },
-  { value: "archived", label: "Lưu trữ" },
+  { value: "in_progress", label: "Drafting" },
+  { value: "published", label: "Published" },
 ];
 
 export default function CourseApprovals() {
@@ -172,7 +165,7 @@ export default function CourseApprovals() {
 
   const inProgressCount = countByStatus("in_progress");
   const publishedCount = countByStatus("published");
-  const archivedCount = countByStatus("archived");
+  // const archivedCount = countByStatus("archived");
 
   /* ── actions ───────────────────────────────────────────────── */
   const handleOpenFlag = (courseId) => {
@@ -185,7 +178,7 @@ export default function CourseApprovals() {
     if (!flagCourseId) return;
     try {
       setActionLoading(flagCourseId);
-      await courseAPI.flagCourse(flagCourseId, { reason: flagReason });
+      await courseApprovalAPI.flagCourse(flagCourseId, { reason: flagReason });
       toast({
         title: "Course flagged",
         description: "Course has been flagged as inappropriate.",
@@ -211,7 +204,7 @@ export default function CourseApprovals() {
   const handleUnflag = async (courseId) => {
     try {
       setActionLoading(courseId);
-      await courseAPI.unflagCourse(courseId);
+      await courseApprovalAPI.unflagCourse(courseId);
       toast({
         title: "Flag removed",
         description: "Course is no longer flagged.",
@@ -261,13 +254,10 @@ export default function CourseApprovals() {
             </Box>
             <HStack flexWrap="wrap">
               <Badge px={3} py={1.5} borderRadius="full" colorScheme="gray">
-                {inProgressCount} Đang soạn
+                {inProgressCount} Drafting
               </Badge>
               <Badge px={3} py={1.5} borderRadius="full" colorScheme="green">
-                {publishedCount} Đã xuất bản
-              </Badge>
-              <Badge px={3} py={1.5} borderRadius="full" colorScheme="orange">
-                {archivedCount} Lưu trữ
+                {publishedCount} Published
               </Badge>
             </HStack>
           </Flex>
@@ -462,11 +452,17 @@ export default function CourseApprovals() {
                           </Td>
                           <Td>
                             {r.contentFlagged ? (
-                              <Badge colorScheme="red" borderRadius="full" px={2}>
+                              <Badge
+                                colorScheme="red"
+                                borderRadius="full"
+                                px={2}
+                              >
                                 Flagged
                               </Badge>
                             ) : (
-                              <Text fontSize="sm" color={muted}>—</Text>
+                              <Text fontSize="sm" color={muted}>
+                                —
+                              </Text>
                             )}
                           </Td>
                           <Td textAlign="center">
@@ -486,7 +482,7 @@ export default function CourseApprovals() {
                                   isLoading={isActing}
                                   onClick={() => handleUnflag(r.id)}
                                 >
-                                  Bỏ cờ
+                                  Unflag
                                 </Button>
                               ) : (
                                 <Button
@@ -497,7 +493,7 @@ export default function CourseApprovals() {
                                   isLoading={isActing}
                                   onClick={() => handleOpenFlag(r.id)}
                                 >
-                                  Đánh cờ
+                                  Flag
                                 </Button>
                               )}
                             </HStack>
@@ -552,36 +548,14 @@ export default function CourseApprovals() {
       </Box>
 
       {/* Flag Modal */}
-      <Modal isOpen={isOpen} onClose={onClose} isCentered>
-        <ModalOverlay />
-        <ModalContent>
-          <ModalHeader>Đánh cờ nội dung không phù hợp</ModalHeader>
-          <ModalCloseButton />
-          <ModalBody>
-            <Text mb={3}>
-              Nêu lý do đánh cờ (tùy chọn). Course bị đánh cờ sẽ không hiển thị trên danh sách công khai.
-            </Text>
-            <Textarea
-              placeholder="Lý do đánh cờ..."
-              value={flagReason}
-              onChange={(e) => setFlagReason(e.target.value)}
-              rows={4}
-            />
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="ghost" mr={3} onClick={onClose}>
-              Hủy
-            </Button>
-            <Button
-              colorScheme="red"
-              onClick={handleConfirmFlag}
-              isLoading={actionLoading === flagCourseId}
-            >
-              Đánh cờ
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
+      <FlagContentConfirmModal
+        isOpen={isOpen}
+        onClose={onClose}
+        reason={flagReason}
+        onReasonChange={(e) => setFlagReason(e.target.value)}
+        onConfirm={handleConfirmFlag}
+        isLoading={actionLoading === flagCourseId}
+      />
     </Box>
   );
 }

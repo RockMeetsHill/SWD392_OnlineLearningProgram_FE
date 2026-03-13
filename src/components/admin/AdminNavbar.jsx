@@ -235,12 +235,12 @@ const AdminNavbar = () => {
               >
                 My Profile
               </MenuItem>
-              <MenuItem
+              {/* <MenuItem
                 icon={<SettingsIcon boxSize={4} />}
                 onClick={() => navigate("/admin/settings")}
               >
                 Settings
-              </MenuItem>
+              </MenuItem> */}
               <MenuDivider />
               <MenuItem
                 icon={<LogoutIcon boxSize={4} />}
