@@ -349,12 +349,12 @@ const Navbar = () => {
                                         >
                                             My Profile
                                         </MenuItem>
-                                        <MenuItem
+                                        {/* <MenuItem
                                             icon={<SettingsIcon boxSize={4} />}
                                             onClick={() => navigate("/settings")}
                                         >
                                             Settings
-                                        </MenuItem>
+                                        </MenuItem> */}
                                         <MenuDivider />
                                         <MenuItem
                                             icon={<LogoutIcon boxSize={4} />}

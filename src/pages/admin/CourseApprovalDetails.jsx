@@ -33,6 +33,7 @@ import AdminSidebar from "../../components/admin/AdminSidebar";
 import { courseApprovalAPI } from "../../services/admin/courseApprovalService";
 import LessonPreviewModal from "../../components/admin/LessonPreviewModal";
 import QuizPreviewModal from "../../components/admin/QuizPreviewModal";
+import FlagContentConfirmModal from "../../components/admin/FlagContentConfirmModal";
 
 /* ── Icons ──────────────────────────────────────────────────── */
 const PlayCircleIcon = (props) => (
@@ -51,9 +52,9 @@ const money = (v) =>
 
 /* ── status helpers ──────────────────────────────────────────── */
 const STATUS_MAP = {
-  in_progress: { scheme: "gray", label: "Đang soạn" },
-  published: { scheme: "green", label: "Đã xuất bản" },
-  archived: { scheme: "orange", label: "Lưu trữ" },
+  in_progress: { scheme: "gray", label: "Drafting" },
+  published: { scheme: "green", label: "Published" },
+  archived: { scheme: "orange", label: "Archived" },
 };
 
 const statusInfo = (raw) => {
@@ -762,7 +763,7 @@ export default function CourseApprovalDetails() {
                 isLoading={actionLoading}
                 onClick={handleUnflag}
               >
-                Bỏ cờ
+                Unflag
               </Button>
             ) : (
               <Button
@@ -776,7 +777,7 @@ export default function CourseApprovalDetails() {
                   onFlagOpen();
                 }}
               >
-                Đánh cờ nội dung
+                Flag content
               </Button>
             )}
           </HStack>
@@ -784,36 +785,14 @@ export default function CourseApprovalDetails() {
       </Box>
 
       {/* ── Flag Modal ───────────────────────────────────────────── */}
-      <Modal isOpen={isFlagOpen} onClose={onFlagClose} isCentered size="lg">
-        <ModalOverlay />
-        <ModalContent>
-          <ModalHeader>Đánh cờ nội dung không phù hợp</ModalHeader>
-          <ModalCloseButton />
-          <ModalBody>
-            <Text mb={3}>
-              Nêu lý do đánh cờ (tùy chọn). Course bị đánh cờ sẽ không hiển thị trên danh sách công khai.
-            </Text>
-            <Textarea
-              placeholder="Lý do đánh cờ..."
-              value={flagReason}
-              onChange={(e) => setFlagReason(e.target.value)}
-              rows={5}
-            />
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="ghost" mr={3} onClick={onFlagClose}>
-              Hủy
-            </Button>
-            <Button
-              colorScheme="red"
-              onClick={handleConfirmFlag}
-              isLoading={actionLoading}
-            >
-              Đánh cờ
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
+      <FlagContentConfirmModal
+        isOpen={isFlagOpen}
+        onClose={onFlagClose}
+        reason={flagReason}
+        onReasonChange={(e) => setFlagReason(e.target.value)}
+        onConfirm={handleConfirmFlag}
+        isLoading={actionLoading}
+      />
 
       {/* ── Lesson Preview Modal (extracted component) ──────────── */}
       <LessonPreviewModal

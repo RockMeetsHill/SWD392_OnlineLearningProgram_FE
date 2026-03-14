@@ -10,6 +10,7 @@ import {
   Button,
   FormControl,
   FormLabel,
+  FormErrorMessage,
   Input,
   Select,
   VStack,
@@ -27,6 +28,7 @@ function UpdateInstructorModal({ isOpen, onClose, instructor, onUpdated }) {
     currentLevel: "A0",
   });
   const [isSaving, setIsSaving] = useState(false);
+  const [emailError, setEmailError] = useState("");
   const toast = useToast();
 
   useEffect(() => {
@@ -37,11 +39,23 @@ function UpdateInstructorModal({ isOpen, onClose, instructor, onUpdated }) {
         phoneNumber: instructor.phoneNumber || "",
         currentLevel: instructor.currentLevel || "A0",
       });
+      setEmailError("");
     }
   }, [instructor]);
 
+  const isValidEmail = (email) => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  };
+
   const handleChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+    if (field === "email") {
+      if (value && !isValidEmail(value)) {
+        setEmailError("Please enter a valid email address.");
+      } else {
+        setEmailError("");
+      }
+    }
   };
 
   const handleSave = async () => {
@@ -49,6 +63,18 @@ function UpdateInstructorModal({ isOpen, onClose, instructor, onUpdated }) {
       toast({
         title: "Validation Error",
         description: "Please fill in all required fields.",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
+
+    if (!isValidEmail(formData.email)) {
+      setEmailError("Please enter a valid email address.");
+      toast({
+        title: "Validation Error",
+        description: "Please enter a valid email address.",
         status: "error",
         duration: 3000,
         isClosable: true,
@@ -64,7 +90,7 @@ function UpdateInstructorModal({ isOpen, onClose, instructor, onUpdated }) {
       );
       toast({
         title: "Instructor updated",
-        description: `${formData.name}'s information has been updated.`,
+        description: `${formData.name}'s information has been updated successfully.`,
         status: "success",
         duration: 3000,
         isClosable: true,
@@ -100,7 +126,7 @@ function UpdateInstructorModal({ isOpen, onClose, instructor, onUpdated }) {
                 onChange={(e) => handleChange("name", e.target.value)}
               />
             </FormControl>
-            <FormControl isRequired>
+            <FormControl isRequired isInvalid={!!emailError}>
               <FormLabel>Email</FormLabel>
               <Input
                 type="email"
@@ -108,6 +134,7 @@ function UpdateInstructorModal({ isOpen, onClose, instructor, onUpdated }) {
                 value={formData.email}
                 onChange={(e) => handleChange("email", e.target.value)}
               />
+              <FormErrorMessage>{emailError}</FormErrorMessage>
             </FormControl>
             <FormControl>
               <FormLabel>Phone Number</FormLabel>

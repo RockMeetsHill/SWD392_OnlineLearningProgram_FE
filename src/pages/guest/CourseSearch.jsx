@@ -509,7 +509,7 @@ const CourseSearch = () => {
 
   const textColor = useColorModeValue("gray.900", "white");
   const inputBg = useColorModeValue("white", "gray.800");
-  const borderColor = useColorModeValue("gray.200", "gray.700");
+  // const borderColor = useColorModeValue("gray.200", "gray.700");
 
   // Fetch courses from API
   const fetchCourses = useCallback(async () => {
