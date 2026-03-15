@@ -46,16 +46,16 @@ const RevenueIcon = (props) => (
   <Icon viewBox="0 0 24 24" {...props}>
     <path
       fill="currentColor"
-      d="M16,11.5A2.5,2.5 0 0,1 18.5,14A2.5,2.5 0 0,1 16,16.5A2.5,2.5 0 0,1 13.5,14A2.5,2.5 0 0,1 16,11.5M16,9A5,5 0 0,0 11,14A5,5 0 0,0 16,19A5,5 0 0,0 21,14A5,5 0 0,0 16,9M3,5V19H11.03A8.64,8.64 0 0,1 9,14C9,11.64 10.15,9.55 11.91,8.23L15,2L17.47,6.38C19.5,6.92 21.23,8.19 22.36,9.9L24,8L22,4L18.7,1.23L15.76,3.97L14.19,2L11,6.5L10.5,5H3Z"
+      d="M16,11.78L20.24,4.45L21.97,5.45L16.74,14.5L10.23,10.75L5.46,19H22V21H2V3H4V17.54L9.5,8L16,11.78Z"
     />
   </Icon>
 );
 
-const PlatformFeeIcon = (props) => (
+const FlagIcon = (props) => (
   <Icon viewBox="0 0 24 24" {...props}>
     <path
       fill="currentColor"
-      d="M18.5,3.5L3.5,18.5L5.5,20.5L20.5,5.5M7,4A3,3 0 0,0 4,7A3,3 0 0,0 7,10A3,3 0 0,0 10,7A3,3 0 0,0 7,4M17,14A3,3 0 0,0 14,17A3,3 0 0,0 17,20A3,3 0 0,0 20,17A3,3 0 0,0 17,14Z"
+      d="M14.4,6L14,4H5V21H7V14H12.6L13,16H20V6H14.4Z"
     />
   </Icon>
 );
@@ -141,16 +141,16 @@ const AdminSidebar = () => {
       path: "/admin/manage/students",
     },
     {
-      name: "Course Approvals",
-      icon: PlatformFeeIcon,
+      name: "Course Flags",
+      icon: FlagIcon,
       path: "/admin/course-approvals",
     },
-        {
+    {
       name: "Revenue Tracking",
       icon: RevenueIcon,
       path: "/admin/revenue",
     },
-        {
+    {
       name: "Instructor Payroll",
       icon: WalletIcon,
       path: "/admin/instructor-payroll",
