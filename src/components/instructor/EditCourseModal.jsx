@@ -14,18 +14,21 @@ import {
     Image,
     Input,
     Textarea,
+    Select,
     VStack,
     useToast,
     FormErrorMessage,
 } from "@chakra-ui/react";
-// Sửa import đúng
 import { courseAPI } from "../../services/courseService";
-import { PRIMARY_COLOR } from "../../constants/instructor";
+import { COURSE_CATEGORY_OPTIONS, LEVEL_TARGET_OPTIONS, PRIMARY_COLOR } from "../../constants/instructor";
 
 const EditCourseModal = ({ isOpen, onClose, course, onCourseUpdated }) => {
     const [formData, setFormData] = useState({
         title: "",
         description: "",
+        price: "",
+        category: "Communication",
+        levelTarget: "A1",
     });
     const [thumbnailFile, setThumbnailFile] = useState(null);
     const [thumbnailPreview, setThumbnailPreview] = useState(null);
@@ -39,6 +42,9 @@ const EditCourseModal = ({ isOpen, onClose, course, onCourseUpdated }) => {
             setFormData({
                 title: course.title || "",
                 description: course.description || "",
+                price: course.price || "",
+                category: course.category || "Communication",
+                levelTarget: course.levelTarget || "A1",
             });
             setThumbnailFile(null);
             setThumbnailPreview(null);
@@ -100,6 +106,9 @@ const EditCourseModal = ({ isOpen, onClose, course, onCourseUpdated }) => {
             let updatedCourse = await courseAPI.updateCourse(course.courseId, {
                 title: formData.title.trim(),
                 description: formData.description.trim(),
+                price: formData.price === "" ? 0 : Number(formData.price),
+                category: formData.category,
+                levelTarget: formData.levelTarget,
             });
 
             if (thumbnailFile) {
@@ -143,7 +152,7 @@ const EditCourseModal = ({ isOpen, onClose, course, onCourseUpdated }) => {
     };
 
     const handleClose = () => {
-        setFormData({ title: "", description: "" });
+        setFormData({ title: "", description: "", price: "", category: "Communication", levelTarget: "A1" });
         setThumbnailFile(null);
         setThumbnailPreview(null);
         setErrors({});
@@ -154,17 +163,17 @@ const EditCourseModal = ({ isOpen, onClose, course, onCourseUpdated }) => {
         <Modal isOpen={isOpen} onClose={handleClose} size="lg" isCentered>
             <ModalOverlay />
             <ModalContent>
-                <ModalHeader>Chỉnh sửa khóa học</ModalHeader>
+                <ModalHeader>Edit Course</ModalHeader>
                 <ModalCloseButton />
                 <ModalBody>
                     <VStack spacing={4}>
                         <FormControl isRequired isInvalid={!!errors.title}>
-                            <FormLabel>Tên khóa học</FormLabel>
+                            <FormLabel>Course Name</FormLabel>
                             <Input
                                 name="title"
                                 value={formData.title}
                                 onChange={handleChange}
-                                placeholder="Nhập tên khóa học"
+                                placeholder="Enter course name"
                             />
                             {errors.title && (
                                 <FormErrorMessage>{errors.title}</FormErrorMessage>
@@ -172,13 +181,13 @@ const EditCourseModal = ({ isOpen, onClose, course, onCourseUpdated }) => {
                         </FormControl>
 
                         <FormControl isRequired isInvalid={!!errors.description}>
-                            <FormLabel>Mô tả</FormLabel>
+                            <FormLabel>Description</FormLabel>
                             <Textarea
                                 name="description"
                                 value={formData.description}
                                 onChange={handleChange}
-                                placeholder="Nhập mô tả khóa học"
-                                rows={5}
+                                placeholder="Enter course description"
+                                rows={4}
                                 resize="vertical"
                             />
                             {errors.description && (
@@ -187,7 +196,49 @@ const EditCourseModal = ({ isOpen, onClose, course, onCourseUpdated }) => {
                         </FormControl>
 
                         <FormControl>
-                            <FormLabel>Ảnh bìa</FormLabel>
+                            <FormLabel>Price (VND)</FormLabel>
+                            <Input
+                                name="price"
+                                type="number"
+                                min={0}
+                                value={formData.price}
+                                onChange={handleChange}
+                                placeholder="0 for free"
+                            />
+                        </FormControl>
+
+                        <FormControl>
+                            <FormLabel>Category</FormLabel>
+                            <Select
+                                name="category"
+                                value={formData.category}
+                                onChange={handleChange}
+                            >
+                                {COURSE_CATEGORY_OPTIONS.map((opt) => (
+                                    <option key={opt.value} value={opt.value}>
+                                        {opt.label}
+                                    </option>
+                                ))}
+                            </Select>
+                        </FormControl>
+
+                        <FormControl>
+                            <FormLabel>Level</FormLabel>
+                            <Select
+                                name="levelTarget"
+                                value={formData.levelTarget}
+                                onChange={handleChange}
+                            >
+                                {LEVEL_TARGET_OPTIONS.map((opt) => (
+                                    <option key={opt.value} value={opt.value}>
+                                        {opt.label}
+                                    </option>
+                                ))}
+                            </Select>
+                        </FormControl>
+
+                        <FormControl>
+                            <FormLabel>Thumbnail</FormLabel>
                             {(course?.thumbnailUrl || thumbnailPreview) && (
                                 <Box mb={2}>
                                     <Image
@@ -210,17 +261,17 @@ const EditCourseModal = ({ isOpen, onClose, course, onCourseUpdated }) => {
 
                 <ModalFooter>
                     <Button variant="ghost" mr={3} onClick={handleClose}>
-                        Hủy
+                        Cancel
                     </Button>
                     <Button
                         bg={PRIMARY_COLOR}
                         color="#0A1926"
                         onClick={handleSubmit}
                         isLoading={loading}
-                        loadingText="Đang lưu..."
+                        loadingText="Saving..."
                         _hover={{ opacity: 0.8 }}
                     >
-                        Lưu thay đổi
+                        Save Changes
                     </Button>
                 </ModalFooter>
             </ModalContent>

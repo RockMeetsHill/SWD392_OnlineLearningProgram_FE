@@ -1,5 +1,8 @@
 import {
     Box,
+    Alert,
+    AlertDescription,
+    AlertIcon,
     Flex,
     Heading,
     Text,
@@ -25,6 +28,7 @@ import { useEffect, useState } from 'react'
 import Sidebar from '../../components/student/StudentSidebar'
 import StudentNavbar from '../../components/student/StudentNavbar'
 import { useAuth } from '../../context/AuthContext'
+import { certificateAPI } from '../../services/certificateService'
 import { dashboardAPI } from '../../services/student/dashboardService'
 
 const Dashboard = () => {
@@ -35,15 +39,28 @@ const Dashboard = () => {
     // State management
     const [enrolledCourses, setEnrolledCourses] = useState([])
     const [userProgress, setUserProgress] = useState([])
+    const [certificates, setCertificates] = useState([])
     const [isLoading, setIsLoading] = useState(true)
-    const [error, setError] = useState(null)
+    const [errorMessage, setErrorMessage] = useState('')
 
     // Color mode values
     const bgColor = useColorModeValue('#f8f8f5', 'gray.900')
     const cardBg = useColorModeValue('white', 'gray.800')
-    const borderColor = useColorModeValue('gray.200', 'gray.700')
     const textColor = useColorModeValue('brand.dark', 'white')
     const mutedColor = useColorModeValue('gray.600', 'gray.400')
+    const activeStatusBg = useColorModeValue('blue.100', 'blue.900')
+    const completedStatusBg = useColorModeValue('green.100', 'green.900')
+    const expiredStatusBg = useColorModeValue('orange.100', 'orange.900')
+    const flaggedStatusBg = useColorModeValue('red.100', 'red.900')
+    const courseButtonBg = useColorModeValue('gray.900', 'gray.700')
+    const courseButtonHoverBg = useColorModeValue('gray.800', 'gray.600')
+    const progressTrackBg = useColorModeValue('gray.200', 'gray.700')
+    const courseIconBg = useColorModeValue('blue.50', 'blue.900')
+    const deadlineHoverBg = useColorModeValue('gray.50', 'gray.700')
+    const levelBadgeBg = useColorModeValue('gray.100', 'gray.700')
+
+    const flaggedCourseMessage =
+        'Sorry, this course is temporarily unavailable because it was flagged by the admin. Please come back later.'
 
     // Fetch enrolled courses and progress
     useEffect(() => {
@@ -52,19 +69,21 @@ const Dashboard = () => {
 
             try {
                 setIsLoading(true)
-                setError(null)
+                setErrorMessage('')
 
                 // Fetch enrolled courses and progress in parallel
-                const [coursesData, progressData] = await Promise.all([
+                const [coursesData, progressData, certificatesData] = await Promise.all([
                     dashboardAPI.getEnrolledCourses(),
                     dashboardAPI.getUserProgress(),
+                    certificateAPI.getMyCertificates(),
                 ])
 
                 setEnrolledCourses(coursesData)
                 setUserProgress(progressData)
+                setCertificates(certificatesData)
             } catch (err) {
                 console.error('Error fetching dashboard data:', err)
-                setError(err.message || 'Failed to load dashboard data')
+                setErrorMessage(err.message || 'Failed to load dashboard data')
                 toast({
                     title: 'Error loading data',
                     description: err.message || 'Failed to load your courses',
@@ -97,11 +116,67 @@ const Dashboard = () => {
         }, 0)
     }
 
-    // Find current/in-progress course
-    const currentCourse = enrolledCourses.find((course) => {
+    const getCourseCardState = (course) => {
+        const certificate = certificates.find((item) => item.courseId === course.courseId) || null
         const progress = getCourseProgressData(course.courseId)
-        return progress.percentage > 0 && progress.percentage < 100
-    })
+        const totalLessons = progress.totalLessons || getTotalLessons(course)
+        const completedLessons = Number(progress.completedLessons || 0)
+        const percentage = Number(progress.percentage || 0)
+        const isCompleted =
+            percentage >= 100 || (totalLessons > 0 && completedLessons >= totalLessons)
+        const isFlagged = !!course.contentFlagged
+        const isExpired = course.enrollmentStatus === 'expired'
+        let statusLabel = 'IN PROGRESS'
+        let actionLabel = 'Continue Learning'
+        let statusBg = activeStatusBg
+        let statusColor = 'blue.700'
+
+        if (isFlagged) {
+            statusLabel = 'FLAGGED'
+            actionLabel = 'Flagged - Check Back Later'
+            statusBg = flaggedStatusBg
+            statusColor = 'red.700'
+        } else if (isCompleted) {
+            statusLabel = 'COMPLETED'
+            actionLabel = 'Review'
+            statusBg = completedStatusBg
+            statusColor = 'green.700'
+        } else if (isExpired) {
+            statusLabel = 'EXPIRED'
+            actionLabel = 'Course Expired'
+            statusBg = expiredStatusBg
+            statusColor = 'orange.700'
+        }
+
+        return {
+            ...course,
+            progress,
+            totalLessons,
+            completedLessons,
+            percentage,
+            isCompleted,
+            isFlagged,
+            isExpired,
+            isLocked: isFlagged || isExpired,
+            certificateId: certificate?.id || null,
+            statusLabel,
+            actionLabel,
+            statusBg,
+            statusColor,
+        }
+    }
+
+    const getCourseIcon = (category) => {
+        if (category === 'Business') return '💼'
+        if (category === 'IELTS') return '🎯'
+        return '📚'
+    }
+
+    // Find current/in-progress course
+    const courseCards = enrolledCourses.map(getCourseCardState)
+    const currentCourse = courseCards.find(
+        (course) => !course.isFlagged && !course.isCompleted && course.percentage > 0
+    )
 
     // Mock data for accomplishments and deadlines
     const accomplishments = [
@@ -147,6 +222,10 @@ const Dashboard = () => {
         navigate(`/student/courses/${courseId}/learn`)
     }
 
+    const handleViewCertificate = (certificateId) => {
+        navigate(`/student/certificates/${certificateId}`)
+    }
+
     // Loading state
     if (isLoading) {
         return (
@@ -190,6 +269,13 @@ const Dashboard = () => {
                                         Ready for your learning today? You're doing great!
                                     </Text>
                                 </Box>
+
+                                {errorMessage && (
+                                    <Alert status="warning" rounded="xl">
+                                        <AlertIcon />
+                                        <AlertDescription>{errorMessage}</AlertDescription>
+                                    </Alert>
+                                )}
 
                                 {/* Current Lesson Card */}
                                 {currentCourse && (
@@ -253,18 +339,14 @@ const Dashboard = () => {
                                                                 fontWeight="bold"
                                                                 color={textColor}
                                                             >
-                                                                {getCourseProgressData(currentCourse.courseId)
-                                                                    .percentage}
+                                                                {currentCourse.percentage}
                                                                 %
                                                             </Text>
                                                         </Flex>
                                                         <Progress
-                                                            value={
-                                                                getCourseProgressData(currentCourse.courseId)
-                                                                    .percentage
-                                                            }
+                                                            value={currentCourse.percentage}
                                                             colorScheme="yellow"
-                                                            bg={useColorModeValue('gray.200', 'gray.700')}
+                                                            bg={progressTrackBg}
                                                             rounded="full"
                                                             size="sm"
                                                         />
@@ -335,24 +417,30 @@ const Dashboard = () => {
                                             templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)' }}
                                             gap={4}
                                         >
-                                            {enrolledCourses.slice(0, 4).map((course) => {
-                                                const progress = getCourseProgressData(course.courseId)
-                                                const totalLessons = getTotalLessons(course)
-
+                                            {courseCards.slice(0, 4).map((course) => {
                                                 return (
                                                     <Card
                                                         key={course.courseId}
                                                         bg={cardBg}
                                                         shadow="sm"
                                                         rounded="xl"
-                                                        cursor="pointer"
+                                                        cursor={course.isLocked ? 'default' : 'pointer'}
                                                         transition="all 0.2s"
-                                                        _hover={{
-                                                            transform: 'translateY(-4px)',
-                                                            shadow: 'md',
-                                                        }}
-                                                        onClick={() =>
-                                                            handleContinueLearning(course.courseId)
+                                                        _hover={
+                                                            course.isLocked
+                                                                ? {}
+                                                                : {
+                                                                    transform: 'translateY(-4px)',
+                                                                    shadow: 'md',
+                                                                }
+                                                        }
+                                                        onClick={
+                                                            course.isLocked
+                                                                ? undefined
+                                                                : () =>
+                                                                    handleContinueLearning(
+                                                                        course.courseId
+                                                                    )
                                                         }
                                                     >
                                                         <CardBody>
@@ -361,35 +449,38 @@ const Dashboard = () => {
                                                                     <Flex
                                                                         w={12}
                                                                         h={12}
-                                                                        bg={useColorModeValue(
-                                                                            'blue.50',
-                                                                            'blue.900'
-                                                                        )}
+                                                                        bg={courseIconBg}
                                                                         rounded="lg"
                                                                         align="center"
                                                                         justify="center"
                                                                         fontSize="2xl"
                                                                     >
-                                                                        {course.category === 'Business'
-                                                                            ? '💼'
-                                                                            : course.category === 'IELTS'
-                                                                            ? '🎯'
-                                                                            : '📚'}
+                                                                        {getCourseIcon(course.category)}
                                                                     </Flex>
-                                                                    <Badge
-                                                                        bg={useColorModeValue(
-                                                                            'gray.100',
-                                                                            'gray.700'
-                                                                        )}
-                                                                        color={mutedColor}
-                                                                        fontSize="xs"
-                                                                        fontWeight="bold"
-                                                                        px={2}
-                                                                        py={1}
-                                                                        rounded="md"
-                                                                    >
-                                                                        {course.levelTarget || 'SELF-PACED'}
-                                                                    </Badge>
+                                                                    <VStack align="end" spacing={2}>
+                                                                        <Badge
+                                                                            bg={levelBadgeBg}
+                                                                            color={mutedColor}
+                                                                            fontSize="xs"
+                                                                            fontWeight="bold"
+                                                                            px={2}
+                                                                            py={1}
+                                                                            rounded="md"
+                                                                        >
+                                                                            {course.levelTarget || 'SELF-PACED'}
+                                                                        </Badge>
+                                                                        <Badge
+                                                                            bg={course.statusBg}
+                                                                            color={course.statusColor}
+                                                                            fontSize="xs"
+                                                                            fontWeight="bold"
+                                                                            px={2}
+                                                                            py={1}
+                                                                            rounded="md"
+                                                                        >
+                                                                            {course.statusLabel}
+                                                                        </Badge>
+                                                                    </VStack>
                                                                 </Flex>
 
                                                                 <VStack align="stretch" spacing={1}>
@@ -418,43 +509,64 @@ const Dashboard = () => {
                                                                             fontWeight="bold"
                                                                             color={textColor}
                                                                         >
-                                                                            {progress.percentage}% (
-                                                                            {progress.completedLessons}/
-                                                                            {progress.totalLessons || totalLessons}{' '}
+                                                                            {course.percentage}% (
+                                                                            {course.completedLessons}/
+                                                                            {course.totalLessons}{' '}
                                                                             LESSONS)
                                                                         </Text>
                                                                     </Flex>
                                                                     <Progress
-                                                                        value={progress.percentage}
+                                                                        value={course.percentage}
                                                                         colorScheme="yellow"
-                                                                        bg={useColorModeValue(
-                                                                            'gray.200',
-                                                                            'gray.700'
-                                                                        )}
+                                                                        bg={progressTrackBg}
                                                                         rounded="full"
                                                                         size="sm"
                                                                     />
                                                                 </Box>
 
+                                                                {course.isFlagged && (
+                                                                    <Alert
+                                                                        status="error"
+                                                                        rounded="lg"
+                                                                        alignItems="flex-start"
+                                                                    >
+                                                                        <AlertIcon mt={1} />
+                                                                        <AlertDescription fontSize="sm">
+                                                                            {flaggedCourseMessage}
+                                                                            {course.contentFlaggedReason
+                                                                                ? ` Reason: ${course.contentFlaggedReason}`
+                                                                                : ''}
+                                                                        </AlertDescription>
+                                                                    </Alert>
+                                                                )}
+
                                                                 <Button
                                                                     variant="solid"
-                                                                    bg={useColorModeValue(
-                                                                        'gray.900',
-                                                                        'gray.700'
-                                                                    )}
+                                                                    bg={courseButtonBg}
                                                                     color="white"
                                                                     rounded="full"
                                                                     fontWeight="bold"
                                                                     rightIcon={<ChevronRightIcon />}
                                                                     _hover={{
-                                                                        bg: useColorModeValue(
-                                                                            'gray.800',
-                                                                            'gray.600'
-                                                                        ),
+                                                                        bg: courseButtonHoverBg,
                                                                     }}
+                                                                    isDisabled={course.isLocked}
                                                                 >
-                                                                    Continue Learning
+                                                                    {course.actionLabel}
                                                                 </Button>
+                                                                {course.isCompleted && course.certificateId && (
+                                                                    <Button
+                                                                        variant="outline"
+                                                                        rounded="full"
+                                                                        fontWeight="bold"
+                                                                        onClick={(event) => {
+                                                                            event.stopPropagation()
+                                                                            handleViewCertificate(course.certificateId)
+                                                                        }}
+                                                                    >
+                                                                        View Certificate
+                                                                    </Button>
+                                                                )}
                                                             </VStack>
                                                         </CardBody>
                                                     </Card>
@@ -558,7 +670,7 @@ const Dashboard = () => {
                                                     cursor="pointer"
                                                     transition="all 0.2s"
                                                     _hover={{
-                                                        bg: useColorModeValue('gray.50', 'gray.700'),
+                                                        bg: deadlineHoverBg,
                                                     }}
                                                 >
                                                     <VStack align="start" spacing={0}>

@@ -1,14 +1,15 @@
 import {
     Box,
-    Container,
     Flex,
     Heading,
     Text,
     Button,
+    Alert,
+    AlertIcon,
+    AlertDescription,
     VStack,
     HStack,
     Grid,
-    GridItem,
     Progress,
     Badge,
     Card,
@@ -17,7 +18,6 @@ import {
     Input,
     InputGroup,
     InputLeftElement,
-    Icon,
     Select,
     Divider,
     Spinner,
@@ -30,14 +30,14 @@ import { useNavigate } from 'react-router-dom'
 import Sidebar from '../../components/student/StudentSidebar'
 import StudentNavbar from '../../components/student/StudentNavbar'
 import { useAuth } from '../../context/AuthContext'
-import { getStudentCourses } from '../../services/student/dashboardService'
+import { certificateAPI } from '../../services/certificateService'
+import { dashboardAPI } from '../../services/student/dashboardService'
 
 const StudentCourses = () => {
     const [searchQuery, setSearchQuery] = useState('')
     const [filterStatus, setFilterStatus] = useState('all')
     const [courses, setCourses] = useState([])
     const [loading, setLoading] = useState(true)
-    const [error, setError] = useState(null)
 
     const navigate = useNavigate()
     const toast = useToast()
@@ -47,6 +47,14 @@ const StudentCourses = () => {
     const cardBg = useColorModeValue('white', 'gray.800')
     const textColor = useColorModeValue('brand.dark', 'white')
     const mutedColor = useColorModeValue('gray.600', 'gray.400')
+    const thumbnailFallbackBg = useColorModeValue('gray.100', 'gray.700')
+    const activeStatusBg = useColorModeValue('blue.100', 'blue.900')
+    const expiredStatusBg = useColorModeValue('orange.100', 'orange.900')
+    const flaggedStatusBg = useColorModeValue('red.100', 'red.900')
+    const courseButtonBg = useColorModeValue('gray.900', 'gray.700')
+    const courseButtonHoverBg = useColorModeValue('gray.800', 'gray.600')
+    const progressTrackBg = useColorModeValue('gray.200', 'gray.700')
+    const formBorderColor = useColorModeValue('gray.200', 'gray.700')
 
     const { user } = useAuth()
 
@@ -60,15 +68,39 @@ const StudentCourses = () => {
 
             try {
                 setLoading(true)
-                const data = await getStudentCourses(user.userId)
+                const [courseData, progressData, certificatesData] = await Promise.all([
+                    dashboardAPI.getCoursesByStudentId(user.userId),
+                    dashboardAPI.getUserProgress(),
+                    certificateAPI.getMyCertificates(),
+                ])
+
+                const progressByCourseId = new Map(
+                    (progressData || []).map((entry) => [entry.courseId, entry])
+                )
+                const certificateByCourseId = new Map(
+                    (certificatesData || []).map((item) => [item.courseId, item])
+                )
 
                 // Transform data từ API để phù hợp với UI
-                const transformedCourses = data.map((course) => {
+                const transformedCourses = courseData.map((course) => {
+                    const progressEntry = progressByCourseId.get(course.courseId)
                     // Tính tổng số lessons từ modules
                     const totalLessons = course.modules?.reduce(
                         (acc, module) => acc + (module._count?.lessons || 0),
                         0
                     ) || 0
+
+                    const progress = Number(progressEntry?.percentage ?? course.progressPercent ?? 0)
+                    const completedLessons = Number(progressEntry?.completedLessons ?? 0)
+                    const hasCompletedAllLessons = totalLessons > 0 && completedLessons >= totalLessons
+                    const status = course.enrollmentStatus || 'active'
+                    const normalizedStatus =
+                        status === 'expired'
+                            ? 'expired'
+                            : status === 'completed' || progress >= 100 || hasCompletedAllLessons
+                                ? 'completed'
+                                : 'active'
+                    const certificate = certificateByCourseId.get(course.courseId)
 
                     return {
                         id: course.courseId,
@@ -81,20 +113,21 @@ const StudentCourses = () => {
                         totalLessons,
                         enrolledAt: course.enrolledAt,
                         expiryDate: course.expiryDate,
-                        // Giả định status dựa vào progress (có thể cần API riêng cho progress)
-                        progress: 0, // Cần API để lấy progress thực tế
-                        completedLessons: 0, // Cần API để lấy số lesson đã hoàn thành
-                        status: 'active', // Mặc định active, cần logic để xác định completed
+                        progress,
+                        completedLessons,
+                        status: normalizedStatus,
+                        contentFlagged: !!course.contentFlagged,
+                        contentFlaggedReason: course.contentFlaggedReason || '',
+                        certificateId: certificate?.id || null,
                     }
                 })
 
                 setCourses(transformedCourses)
             } catch (err) {
                 console.error('Error fetching courses:', err)
-                setError(err.response?.data?.error || 'Failed to load courses')
                 toast({
                     title: 'Error',
-                    description: 'Failed to load your courses',
+                    description: err.message || 'Failed to load your courses',
                     status: 'error',
                     duration: 5000,
                     isClosable: true,
@@ -119,6 +152,10 @@ const StudentCourses = () => {
 
     const activeCourses = courses.filter((c) => c.status === 'active')
     const completedCourses = courses.filter((c) => c.status === 'completed')
+    const expiredCourses = courses.filter((c) => c.status === 'expired')
+    const recommendedActiveCourses = [...activeCourses]
+        .filter((course) => !course.contentFlagged)
+        .sort((a, b) => b.progress - a.progress)
 
     // Format date helper
     const formatDate = (dateString) => {
@@ -149,6 +186,10 @@ const StudentCourses = () => {
         navigate(`/student/courses/${courseId}/learn`)
     }
 
+    const handleViewCertificate = (certificateId) => {
+        navigate(`/student/certificates/${certificateId}`)
+    }
+
     const CourseCard = ({ course }) => (
         <Card bg={cardBg} shadow="sm" rounded="xl" transition="all 0.3s" _hover={{ shadow: 'md' }}>
             <CardBody>
@@ -157,7 +198,7 @@ const StudentCourses = () => {
                     <Box
                         w="100%"
                         h="150px"
-                        bg={useColorModeValue('gray.100', 'gray.700')}
+                        bg={thumbnailFallbackBg}
                         rounded="lg"
                         overflow="hidden"
                     >
@@ -196,14 +237,22 @@ const StudentCourses = () => {
                         </Badge>
                         <Badge
                             bg={
-                                course.status === 'active'
-                                    ? useColorModeValue('blue.100', 'blue.900')
-                                    : 'green.100'
+                                course.contentFlagged
+                                    ? flaggedStatusBg
+                                    : course.status === 'active'
+                                        ? activeStatusBg
+                                        : course.status === 'expired'
+                                            ? expiredStatusBg
+                                            : 'green.100'
                             }
                             color={
-                                course.status === 'active'
-                                    ? 'blue.700'
-                                    : 'green.700'
+                                course.contentFlagged
+                                    ? 'red.700'
+                                    : course.status === 'active'
+                                        ? 'blue.700'
+                                        : course.status === 'expired'
+                                            ? 'orange.700'
+                                            : 'green.700'
                             }
                             fontSize="xs"
                             fontWeight="bold"
@@ -211,7 +260,13 @@ const StudentCourses = () => {
                             py={1}
                             rounded="md"
                         >
-                            {course.status === 'completed' ? 'COMPLETED' : 'IN PROGRESS'}
+                            {course.contentFlagged
+                                ? 'FLAGGED'
+                                : course.status === 'completed'
+                                    ? 'COMPLETED'
+                                    : course.status === 'expired'
+                                        ? 'EXPIRED'
+                                        : 'IN PROGRESS'}
                         </Badge>
                     </Flex>
 
@@ -253,11 +308,24 @@ const StudentCourses = () => {
                         <Progress
                             value={course.progress}
                             colorScheme="yellow"
-                            bg={useColorModeValue('gray.200', 'gray.700')}
+                            bg={progressTrackBg}
                             rounded="full"
                             size="sm"
                         />
                     </Box>
+
+                    {course.contentFlagged && (
+                        <Alert status="error" rounded="lg" alignItems="flex-start">
+                            <AlertIcon mt={1} />
+                            <AlertDescription fontSize="sm">
+                                Sorry, this course is temporarily unavailable because it was flagged by
+                                the admin. Please come back later.
+                                {course.contentFlaggedReason
+                                    ? ` Reason: ${course.contentFlaggedReason}`
+                                    : ''}
+                            </AlertDescription>
+                        </Alert>
+                    )}
 
                     {/* Meta Info */}
                     <HStack spacing={4} fontSize="xs" color={mutedColor} flexWrap="wrap">
@@ -270,19 +338,36 @@ const StudentCourses = () => {
                     {/* Action Button */}
                     <Button
                         variant="solid"
-                        bg={useColorModeValue('gray.900', 'gray.700')}
+                        bg={courseButtonBg}
                         color="white"
                         rounded="full"
                         fontWeight="bold"
                         rightIcon={<ChevronRightIcon />}
                         _hover={{
-                            bg: useColorModeValue('gray.800', 'gray.600'),
+                            bg: courseButtonHoverBg,
                         }}
                         w="full"
+                        isDisabled={course.status === 'expired' || course.contentFlagged}
                         onClick={() => handleContinueLearning(course.id)}
                     >
-                        {course.status === 'completed' ? 'Review Course' : 'Continue Learning'}
+                        {course.contentFlagged
+                            ? 'Flagged - Check Back Later'
+                            : course.status === 'completed'
+                                ? 'Review'
+                                : course.status === 'expired'
+                                    ? 'Course Expired'
+                                    : 'Continue Learning'}
                     </Button>
+                    {course.status === 'completed' && course.certificateId && (
+                        <Button
+                            variant="outline"
+                            rounded="full"
+                            fontWeight="bold"
+                            onClick={() => handleViewCertificate(course.certificateId)}
+                        >
+                            View Certificate
+                        </Button>
+                    )}
                 </VStack>
             </CardBody>
         </Card>
@@ -331,7 +416,7 @@ const StudentCourses = () => {
 
                         {/* Stats Section */}
                         <Grid
-                            templateColumns={{ base: '1fr', md: 'repeat(3, 1fr)' }}
+                            templateColumns={{ base: '1fr', md: 'repeat(4, 1fr)' }}
                             gap={4}
                         >
                             <Card bg={cardBg} shadow="sm" rounded="xl">
@@ -370,6 +455,18 @@ const StudentCourses = () => {
                                     </VStack>
                                 </CardBody>
                             </Card>
+                            <Card bg={cardBg} shadow="sm" rounded="xl">
+                                <CardBody>
+                                    <VStack align="stretch" spacing={2}>
+                                        <Heading size="md" color="orange.500">
+                                            {expiredCourses.length}
+                                        </Heading>
+                                        <Text fontSize="sm" color={mutedColor}>
+                                            Expired Courses
+                                        </Text>
+                                    </VStack>
+                                </CardBody>
+                            </Card>
                         </Grid>
 
                         {/* Search & Filter Section */}
@@ -384,7 +481,7 @@ const StudentCourses = () => {
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                     bg={cardBg}
                                     border="1px solid"
-                                    borderColor={useColorModeValue('gray.200', 'gray.700')}
+                                    borderColor={formBorderColor}
                                     rounded="lg"
                                     _focus={{
                                         borderColor: 'primary.500',
@@ -399,7 +496,7 @@ const StudentCourses = () => {
                                 onChange={(e) => setFilterStatus(e.target.value)}
                                 bg={cardBg}
                                 border="1px solid"
-                                borderColor={useColorModeValue('gray.200', 'gray.700')}
+                                borderColor={formBorderColor}
                                 rounded="lg"
                                 _focus={{
                                     borderColor: 'primary.500',
@@ -409,6 +506,7 @@ const StudentCourses = () => {
                                 <option value="all">All Courses</option>
                                 <option value="active">Active</option>
                                 <option value="completed">Completed</option>
+                                <option value="expired">Expired</option>
                             </Select>
                         </HStack>
 
@@ -419,7 +517,9 @@ const StudentCourses = () => {
                                     ? `All Courses (${filteredCourses.length})`
                                     : filterStatus === 'active'
                                         ? `Active Courses (${filteredCourses.length})`
-                                        : `Completed Courses (${filteredCourses.length})`}
+                                        : filterStatus === 'completed'
+                                            ? `Completed Courses (${filteredCourses.length})`
+                                            : `Expired Courses (${filteredCourses.length})`}
                             </Heading>
 
                             {filteredCourses.length > 0 ? (
@@ -469,7 +569,7 @@ const StudentCourses = () => {
                         </Box>
 
                         {/* Continue Learning Section */}
-                        {activeCourses.length > 0 && (
+                        {recommendedActiveCourses.length > 0 && (
                             <>
                                 <Divider />
                                 <Box>
@@ -486,17 +586,14 @@ const StudentCourses = () => {
                                                 <Box
                                                     w={{ base: '100%', md: '200px' }}
                                                     h="150px"
-                                                    bg={useColorModeValue(
-                                                        'gray.100',
-                                                        'gray.800'
-                                                    )}
+                                                    bg={thumbnailFallbackBg}
                                                     rounded="xl"
                                                     overflow="hidden"
                                                 >
-                                                    {activeCourses[0].thumbnail ? (
+                                                    {recommendedActiveCourses[0].thumbnail ? (
                                                         <Image
-                                                            src={activeCourses[0].thumbnail}
-                                                            alt={activeCourses[0].title}
+                                                            src={recommendedActiveCourses[0].thumbnail}
+                                                            alt={recommendedActiveCourses[0].title}
                                                             w="100%"
                                                             h="100%"
                                                             objectFit="cover"
@@ -530,13 +627,13 @@ const StudentCourses = () => {
                                                     </Badge>
 
                                                     <Heading size="md" color={textColor}>
-                                                        {activeCourses[0].title}
+                                                        {recommendedActiveCourses[0].title}
                                                     </Heading>
 
                                                     <Text color={mutedColor} fontSize="sm">
                                                         You're making great progress! Keep going with{' '}
                                                         <strong>
-                                                            {activeCourses[0].instructor}
+                                                            {recommendedActiveCourses[0].instructor}
                                                         </strong>
                                                         's course.
                                                     </Text>
@@ -554,18 +651,15 @@ const StudentCourses = () => {
                                                                 fontWeight="bold"
                                                                 color={textColor}
                                                             >
-                                                                {activeCourses[0].progress}%
+                                                                {recommendedActiveCourses[0].progress}%
                                                             </Text>
                                                         </Flex>
                                                         <Progress
                                                             value={
-                                                                activeCourses[0].progress
+                                                                recommendedActiveCourses[0].progress
                                                             }
                                                             colorScheme="yellow"
-                                                            bg={useColorModeValue(
-                                                                'gray.200',
-                                                                'gray.700'
-                                                            )}
+                                                            bg={progressTrackBg}
                                                             rounded="full"
                                                             size="sm"
                                                         />
@@ -581,7 +675,7 @@ const StudentCourses = () => {
                                                         _hover={{
                                                             bg: 'primary.400',
                                                         }}
-                                                        onClick={() => handleContinueLearning(activeCourses[0].id)}
+                                                        onClick={() => handleContinueLearning(recommendedActiveCourses[0].id)}
                                                     >
                                                         Continue Learning
                                                     </Button>
@@ -592,6 +686,7 @@ const StudentCourses = () => {
                                 </Box>
                             </>
                         )}
+
                     </VStack>
                 </Box>
             </Box>

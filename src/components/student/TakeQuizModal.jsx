@@ -24,6 +24,7 @@ import {
     CircularProgressLabel,
 } from "@chakra-ui/react";
 import { CheckCircleIcon, WarningIcon } from "@chakra-ui/icons";
+import { useNavigate } from "react-router-dom";
 import { quizAPI } from "../../services/quizService";
 import { PRIMARY_COLOR } from "../../constants/instructor";
 
@@ -33,6 +34,7 @@ const TakeQuizModal = ({ isOpen, onClose, quizId, quizTitle, onSubmitted }) => {
     const [submitting, setSubmitting] = useState(false);
     const [result, setResult] = useState(null);
     const [selections, setSelections] = useState({});
+    const navigate = useNavigate();
     const toast = useToast();
     const textColor = useColorModeValue("gray.900", "white");
     const mutedColor = useColorModeValue("gray.500", "gray.400");
@@ -255,6 +257,37 @@ const TakeQuizModal = ({ isOpen, onClose, quizId, quizTitle, onSubmitted }) => {
                                 💪 Cố gắng lên! Hãy xem lại bài học và thử lại.
                             </Text>
                         )}
+                    </Box>
+                )}
+
+                {result.certificateEarned && result.certificateData?.certificateId && (
+                    <Box
+                        p={4}
+                        borderRadius="lg"
+                        borderWidth="1px"
+                        borderColor="green.200"
+                        bg="green.50"
+                    >
+                        <VStack align="start" spacing={3}>
+                            <Text fontWeight="bold" color="green.700">
+                                Certificate unlocked
+                            </Text>
+                            <Text fontSize="sm" color="green.700">
+                                Congratulations! You have earned your course certificate.
+                            </Text>
+                            <Button
+                                size="sm"
+                                colorScheme="green"
+                                onClick={() => {
+                                    handleClose();
+                                    navigate(
+                                        `/student/certificates/${result.certificateData.certificateId}`
+                                    );
+                                }}
+                            >
+                                View Certificate
+                            </Button>
+                        </VStack>
                     </Box>
                 )}
             </VStack>
