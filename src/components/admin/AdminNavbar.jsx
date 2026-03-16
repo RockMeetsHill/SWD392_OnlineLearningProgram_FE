@@ -118,8 +118,8 @@ const AdminNavbar = () => {
         {/* User Actions */}
         <HStack spacing={2} flexShrink={0}>
           {/* Notifications */}
-          <Popover placement="bottom-end">
-            {/* <PopoverTrigger>
+          {/* <Popover placement="bottom-end">
+            <PopoverTrigger>
               <Box position="relative">
                 <IconButton
                   icon={<BellIcon boxSize={5} />}
@@ -145,7 +145,7 @@ const AdminNavbar = () => {
                 )}
               </Box>
             </PopoverTrigger> */}
-            <PopoverContent bg={menuBg} w="300px">
+            {/* <PopoverContent bg={menuBg} w="300px">
               <PopoverArrow bg={menuBg} />
               <PopoverHeader fontWeight="bold" borderBottomWidth="1px">
                 Notifications
@@ -186,7 +186,7 @@ const AdminNavbar = () => {
                 )}
               </PopoverBody>
             </PopoverContent>
-          </Popover>
+          </Popover> */}
 
           {/* User Menu */}
           <Menu>

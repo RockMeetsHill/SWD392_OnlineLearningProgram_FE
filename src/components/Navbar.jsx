@@ -204,7 +204,7 @@ const Navbar = () => {
                     <HStack spacing={3} display={{ base: "none", md: "flex" }} zIndex={20}>
                         {isAuthenticated ? (
                             <>
-                                {/* Cart Icon */}
+                                {/* Cart Icon
                                 <Box position="relative">
                                     <IconButton
                                         icon={<CartIcon boxSize={5} />}
@@ -229,11 +229,11 @@ const Navbar = () => {
                                             {cartItemsCount}
                                         </Badge>
                                     )}
-                                </Box>
+                                </Box> */}
 
                                 {/* Notifications */}
-                                <Popover placement="bottom-end">
-                                    {/* <PopoverTrigger>
+                                {/* <Popover placement="bottom-end">
+                                    <PopoverTrigger>
                                         <Box position="relative">
                                             <IconButton
                                                 icon={<BellIcon boxSize={5} />}
@@ -259,7 +259,7 @@ const Navbar = () => {
                                             )}
                                         </Box>
                                     </PopoverTrigger> */}
-                                    <PopoverContent bg={menuBg} w="300px">
+                                    {/* <PopoverContent bg={menuBg} w="300px">
                                         <PopoverArrow bg={menuBg} />
                                         <PopoverHeader fontWeight="bold" borderBottomWidth="1px">
                                             Notifications
@@ -300,7 +300,7 @@ const Navbar = () => {
                                             )}
                                         </PopoverBody>
                                     </PopoverContent>
-                                </Popover>
+                                </Popover> */}
 
                                 {/* User Menu */}
                                 <Menu>
