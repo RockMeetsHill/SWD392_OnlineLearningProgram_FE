@@ -119,7 +119,7 @@ const AdminNavbar = () => {
         <HStack spacing={2} flexShrink={0}>
           {/* Notifications */}
           <Popover placement="bottom-end">
-            <PopoverTrigger>
+            {/* <PopoverTrigger>
               <Box position="relative">
                 <IconButton
                   icon={<BellIcon boxSize={5} />}
@@ -144,7 +144,7 @@ const AdminNavbar = () => {
                   </Badge>
                 )}
               </Box>
-            </PopoverTrigger>
+            </PopoverTrigger> */}
             <PopoverContent bg={menuBg} w="300px">
               <PopoverArrow bg={menuBg} />
               <PopoverHeader fontWeight="bold" borderBottomWidth="1px">
@@ -229,12 +229,12 @@ const AdminNavbar = () => {
               >
                 Dashboard
               </MenuItem>
-              <MenuItem
+              {/* <MenuItem
                 icon={<UserIcon boxSize={4} />}
                 onClick={() => navigate("/admin/profile")}
               >
                 My Profile
-              </MenuItem>
+              </MenuItem> */}
               {/* <MenuItem
                 icon={<SettingsIcon boxSize={4} />}
                 onClick={() => navigate("/admin/settings")}

@@ -143,7 +143,7 @@ const StudentNavbar = () => {
                 <HStack spacing={2} flexShrink={0}>
                     {/* Notifications */}
                     <Popover placement="bottom-end">
-                        <PopoverTrigger>
+                        {/* <PopoverTrigger>
                             <Box position="relative">
                                 <IconButton
                                     icon={<BellIcon boxSize={5} />}
@@ -168,7 +168,7 @@ const StudentNavbar = () => {
                                     </Badge>
                                 )}
                             </Box>
-                        </PopoverTrigger>
+                        </PopoverTrigger> */}
                         <PopoverContent bg={menuBg} w="300px">
                             <PopoverArrow bg={menuBg} />
                             <PopoverHeader fontWeight="bold" borderBottomWidth="1px">
@@ -253,7 +253,7 @@ const StudentNavbar = () => {
                             >
                                 Dashboard
                             </MenuItem>
-                            <MenuItem
+                            {/* <MenuItem
                                 icon={<UserIcon boxSize={4} />}
                                 onClick={() => navigate("/profile")}
                             >
@@ -264,7 +264,7 @@ const StudentNavbar = () => {
                                 onClick={() => navigate("/settings")}
                             >
                                 Settings
-                            </MenuItem>
+                            </MenuItem> */}
                             <MenuDivider />
                             <MenuItem
                                 icon={<LogoutIcon boxSize={4} />}

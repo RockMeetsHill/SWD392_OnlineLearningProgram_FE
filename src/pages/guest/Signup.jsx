@@ -298,7 +298,7 @@ const Signup = () => {
                     Create Account
                   </Button>
 
-                  <HStack spacing={4}>
+                  {/* <HStack spacing={4}>
                     <Box
                       h="1px"
                       flex="1"
@@ -312,9 +312,9 @@ const Signup = () => {
                       flex="1"
                       bg={useColorModeValue("gray.200", "gray.700")}
                     />
-                  </HStack>
+                  </HStack> */}
 
-                  <Button
+                  {/* <Button
                     variant="outline"
                     h={14}
                     fontWeight="bold"
@@ -330,7 +330,7 @@ const Signup = () => {
                     }
                   >
                     Sign up with Google
-                  </Button>
+                  </Button> */}
                 </Stack>
 
                 <HStack

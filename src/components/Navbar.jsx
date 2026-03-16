@@ -233,7 +233,7 @@ const Navbar = () => {
 
                                 {/* Notifications */}
                                 <Popover placement="bottom-end">
-                                    <PopoverTrigger>
+                                    {/* <PopoverTrigger>
                                         <Box position="relative">
                                             <IconButton
                                                 icon={<BellIcon boxSize={5} />}
@@ -258,7 +258,7 @@ const Navbar = () => {
                                                 </Badge>
                                             )}
                                         </Box>
-                                    </PopoverTrigger>
+                                    </PopoverTrigger> */}
                                     <PopoverContent bg={menuBg} w="300px">
                                         <PopoverArrow bg={menuBg} />
                                         <PopoverHeader fontWeight="bold" borderBottomWidth="1px">
@@ -343,12 +343,12 @@ const Navbar = () => {
                                         >
                                             Dashboard
                                         </MenuItem>
-                                        <MenuItem
+                                        {/* <MenuItem
                                             icon={<UserIcon boxSize={4} />}
                                             onClick={() => navigate("/profile")}
                                         >
                                             My Profile
-                                        </MenuItem>
+                                        </MenuItem> */}
                                         {/* <MenuItem
                                             icon={<SettingsIcon boxSize={4} />}
                                             onClick={() => navigate("/settings")}
@@ -528,7 +528,7 @@ const Navbar = () => {
                                             Dashboard
                                         </Text>
                                     </Link>
-                                    <Link to="/profile" onClick={onClose}>
+                                    {/* <Link to="/profile" onClick={onClose}>
                                         <Text fontWeight="bold" fontSize="lg">
                                             My Profile
                                         </Text>
@@ -537,7 +537,7 @@ const Navbar = () => {
                                         <Text fontWeight="bold" fontSize="lg">
                                             Settings
                                         </Text>
-                                    </Link>
+                                    </Link> */}
                                     <Button
                                         colorScheme="red"
                                         variant="outline"

@@ -165,7 +165,7 @@ export default function CourseApprovals() {
 
   const inProgressCount = countByStatus("in_progress");
   const publishedCount = countByStatus("published");
-  // const archivedCount = countByStatus("archived");
+  const flaggedCount = rows.filter((r) => r.contentFlagged).length;
 
   /* ── actions ───────────────────────────────────────────────── */
   const handleOpenFlag = (courseId) => {
@@ -258,6 +258,9 @@ export default function CourseApprovals() {
               </Badge>
               <Badge px={3} py={1.5} borderRadius="full" colorScheme="green">
                 {publishedCount} Published
+              </Badge>
+              <Badge px={3} py={1.5} borderRadius="full" colorScheme="red">
+                {flaggedCount} Flagged
               </Badge>
             </HStack>
           </Flex>

@@ -20,6 +20,7 @@ import AdminNavbar from "../../components/admin/AdminNavbar";
 import AdminSidebar from "../../components/admin/AdminSidebar";
 import { useAuth } from "../../context/AuthContext";
 import { adminDashboardAPI } from "../../services/admin/dashboardService";
+import { courseAPI } from "../../services/courseService";
 
 // Custom Icons
 const InstructorApprovalIcon = (props) => (
@@ -137,8 +138,9 @@ const AdminDashboard = () => {
     instructors: 0,
     students: 0,
     courses: 0,
-    pendingApprovals: 0,
+    flaggedCourses: 0,
   });
+  const [flaggedCoursesCount, setFlaggedCoursesCount] = useState(0);
   const [isLoadingStats, setIsLoadingStats] = useState(true);
   const [statsError, setStatsError] = useState("");
 
@@ -162,9 +164,18 @@ const AdminDashboard = () => {
       try {
         setIsLoadingStats(true);
         setStatsError("");
-        const stats = await adminDashboardAPI.getOverviewStats();
+        const [stats, coursesData] = await Promise.all([
+          adminDashboardAPI.getOverviewStats(),
+          courseAPI.getCourses(),
+        ]);
         if (!isMounted) return;
-        setStatsSummary(stats);
+        setStatsSummary((prev) => ({ ...prev, ...stats }));
+        const coursesList = Array.isArray(coursesData)
+          ? coursesData
+          : coursesData?.data || coursesData?.courses || [];
+        setFlaggedCoursesCount(
+          (coursesList || []).filter((course) => course?.contentFlagged).length,
+        );
       } catch (error) {
         if (!isMounted) return;
         setStatsError(error.message || "Failed to load dashboard statistics.");
@@ -212,15 +223,22 @@ const AdminDashboard = () => {
         iconBg: iconBgPurple,
       },
       {
-        label: "Pending Approvals",
-        value: formatNumber(statsSummary.pendingApprovals),
+        label: "Flagged Courses",
+        value: formatNumber(flaggedCoursesCount),
         borderColor: "orange.500",
-        icon: PendingApprovalsIcon,
+        icon: FlagIcon,
         iconColor: "orange.500",
         iconBg: iconBgOrange,
       },
     ],
-    [statsSummary, iconBgBlue, iconBgGreen, iconBgPurple, iconBgOrange],
+    [
+      statsSummary,
+      flaggedCoursesCount,
+      iconBgBlue,
+      iconBgGreen,
+      iconBgPurple,
+      iconBgOrange,
+    ],
   );
 
   // Feature cards data
@@ -267,7 +285,7 @@ const AdminDashboard = () => {
         linkText: "Manage Payroll",
       },
     ],
-    [statsSummary.pendingApprovals],
+    [],
   );
 
   // Get current date
