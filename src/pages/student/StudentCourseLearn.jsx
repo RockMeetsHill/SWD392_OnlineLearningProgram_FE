@@ -2,12 +2,15 @@ import { useState, useEffect } from "react";
 import { useParams, useSearchParams, useNavigate } from "react-router-dom";
 import {
     Box,
+    Badge,
     Flex,
     VStack,
+    HStack,
     Text,
     Button,
     Spinner,
     useColorModeValue,
+    useToast,
     Link,
     Divider,
     Collapse,
@@ -17,12 +20,27 @@ import Sidebar from "../../components/student/StudentSidebar";
 import StudentNavbar from "../../components/student/StudentNavbar";
 import TakeQuizModal from "../../components/student/TakeQuizModal";
 import AITutorChat from "../../components/student/AITutorChat";
+import AssignmentSubmissionPanel from "../../components/student/AssignmentSubmissionPanel";
+import SpeakingPracticePanel from "../../components/student/SpeakingPracticePanel";
 import { courseAPI } from "../../services/courseService";
 import { lessonResourceAPI } from "../../services/lessonResourceService";
 import { progressAPI } from "../../services/progressService";
 import { PRIMARY_COLOR } from "../../constants/instructor";
 
 const API_BASE = (import.meta.env.VITE_API_URL || "http://localhost:3000").replace(/\/api\/?$/, "");
+
+const isSpeakingLesson = (lesson, resources = []) => {
+    const haystack = [
+        lesson?.title,
+        lesson?.contentText,
+        ...(resources || []).map((resource) => resource.title),
+    ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+
+    return lesson?.type === "audio" || /speaking|pronunciation|fluency|cue card/.test(haystack);
+};
 
 const StudentCourseLearn = () => {
     const { courseId } = useParams();
@@ -37,6 +55,7 @@ const StudentCourseLearn = () => {
     const [takeQuizId, setTakeQuizId] = useState(null);
     const [takeQuizTitle, setTakeQuizTitle] = useState("");
     const [courseProgress, setCourseProgress] = useState(null);
+    const toast = useToast();
 
     const bgColor = useColorModeValue("#f8f8f5", "gray.900");
     const sidebarBg = useColorModeValue("white", "gray.800");
@@ -75,18 +94,33 @@ const StudentCourseLearn = () => {
             .then((progress) => {
                 if (progress) setCourseProgress(progress);
             })
-            .catch(() => {
-                if (!cancelled) setCourse(null);
+            .catch((error) => {
+                if (!cancelled) {
+                    const isFlaggedCourse = String(error?.message || "")
+                        .toLowerCase()
+                        .includes("flagged");
+                    toast({
+                        title: isFlaggedCourse ? "Course unavailable" : "Unable to open course",
+                        description: isFlaggedCourse
+                            ? "This course is temporarily unavailable because it was flagged by the admin. Please come back later."
+                            : (error?.message || "Please try again later."),
+                        status: isFlaggedCourse ? "warning" : "error",
+                        duration: 4000,
+                        isClosable: true,
+                    });
+                    setCourse(null);
+                    navigate("/student/dashboard", { replace: true });
+                }
             })
             .finally(() => {
                 if (!cancelled) setLoading(false);
             });
         return () => { cancelled = true; };
-    }, [courseId, navigate]);
+    }, [courseId, navigate, toast]);
 
     const refetchProgress = () => {
         if (courseId) {
-            progressAPI.getCourseProgress(courseId).then(setCourseProgress).catch(() => {});
+            progressAPI.getCourseProgress(courseId).then(setCourseProgress).catch(() => { });
         }
     };
 
@@ -114,9 +148,22 @@ const StudentCourseLearn = () => {
         return map;
     })();
 
+    const selectedLessonProgress = (() => {
+        if (!courseProgress?.modules || !selectedLessonId) return null;
+        for (const module of courseProgress.modules) {
+            const lesson = (module.lessons || []).find((item) => item.lessonId === selectedLessonId);
+            if (lesson) return lesson;
+        }
+        return null;
+    })();
+
+    const resourceProgressMap = new Map(
+        (selectedLessonProgress?.resources || []).map((resource) => [resource.resourceId, resource])
+    );
+
     const setLesson = (lessonId) => {
         setSearchParams({ lessonId: String(lessonId) });
-        progressAPI.updateLessonProgress(lessonId, { status: "in_progress" }).then(() => refetchProgress()).catch(() => {});
+        progressAPI.startLesson(lessonId).then(() => refetchProgress()).catch(() => { });
     };
 
     const toggleModule = (moduleId) => {
@@ -230,6 +277,19 @@ const StudentCourseLearn = () => {
                                             <Text whiteSpace="pre-wrap" color={textColor}>
                                                 {selectedLesson.contentText}
                                             </Text>
+                                            <Button
+                                                mt={4}
+                                                size="sm"
+                                                variant={selectedLessonProgress?.contentViewedAt ? "outline" : "solid"}
+                                                colorScheme={selectedLessonProgress?.contentViewedAt ? "green" : "blue"}
+                                                onClick={() =>
+                                                    progressAPI.markLessonViewed(selectedLessonId)
+                                                        .then(() => refetchProgress())
+                                                        .catch(() => { })
+                                                }
+                                            >
+                                                {selectedLessonProgress?.contentViewedAt ? "Viewed" : "Mark as Viewed"}
+                                            </Button>
                                         </Box>
                                     )}
                                     {(selectedLesson.mediaUrl || (resources.some((r) => r.fileType === "video"))) && (
@@ -247,7 +307,22 @@ const StudentCourseLearn = () => {
                                                         maxH="400px"
                                                         borderRadius="lg"
                                                         bg="black"
+                                                        onEnded={(event) => {
+                                                            progressAPI
+                                                                .updateLessonVideoProgress(selectedLessonId, {
+                                                                    ended: true,
+                                                                    currentSecond: event.currentTarget.currentTime,
+                                                                    durationSeconds: event.currentTarget.duration,
+                                                                })
+                                                                .then(() => refetchProgress())
+                                                                .catch(() => { });
+                                                        }}
                                                     />
+                                                )}
+                                                {selectedLessonProgress?.videoCompletedAt && (
+                                                    <Badge alignSelf="flex-start" colorScheme="green">
+                                                        Primary video completed
+                                                    </Badge>
                                                 )}
                                                 {resources
                                                     .filter((r) => r.fileType === "video")
@@ -266,7 +341,22 @@ const StudentCourseLearn = () => {
                                                                 maxH="400px"
                                                                 borderRadius="lg"
                                                                 bg="black"
+                                                                onEnded={(event) => {
+                                                                    progressAPI
+                                                                        .updateResourceVideoProgress(r.resourceId, {
+                                                                            ended: true,
+                                                                            currentSecond: event.currentTarget.currentTime,
+                                                                            durationSeconds: event.currentTarget.duration,
+                                                                        })
+                                                                        .then(() => refetchProgress())
+                                                                        .catch(() => { });
+                                                                }}
                                                             />
+                                                            {resourceProgressMap.get(r.resourceId)?.completedAt && (
+                                                                <Badge mt={2} colorScheme="green">
+                                                                    Viewed to the end
+                                                                </Badge>
+                                                            )}
                                                         </Box>
                                                     ))}
                                             </VStack>
@@ -287,15 +377,28 @@ const StudentCourseLearn = () => {
                                                 {resources
                                                     .filter((r) => r.fileType !== "video")
                                                     .map((r) => (
-                                                        <Link
-                                                            key={r.resourceId}
-                                                            href={r.fileUrl.startsWith("http") ? r.fileUrl : `${API_BASE}${r.fileUrl}`}
-                                                            isExternal
-                                                            fontSize="sm"
-                                                            color={PRIMARY_COLOR}
-                                                        >
-                                                            {r.title || "Tài liệu"}
-                                                        </Link>
+                                                        <HStack key={r.resourceId} justify="space-between" align="center">
+                                                            <Link
+                                                                href={r.fileUrl.startsWith("http") ? r.fileUrl : `${API_BASE}${r.fileUrl}`}
+                                                                isExternal
+                                                                fontSize="sm"
+                                                                color={PRIMARY_COLOR}
+                                                            >
+                                                                {r.title || "Document"}
+                                                            </Link>
+                                                            <Button
+                                                                size="xs"
+                                                                variant={resourceProgressMap.get(r.resourceId)?.completedAt ? "outline" : "solid"}
+                                                                colorScheme={resourceProgressMap.get(r.resourceId)?.completedAt ? "green" : "blue"}
+                                                                onClick={() =>
+                                                                    progressAPI.markResourceViewed(r.resourceId)
+                                                                        .then(() => refetchProgress())
+                                                                        .catch(() => { })
+                                                                }
+                                                            >
+                                                                {resourceProgressMap.get(r.resourceId)?.completedAt ? "Viewed" : "Mark as Viewed"}
+                                                            </Button>
+                                                        </HStack>
                                                     ))}
                                             </VStack>
                                         )}
@@ -320,6 +423,32 @@ const StudentCourseLearn = () => {
                                                     Làm bài: {q.title || "Quiz"}
                                                 </Button>
                                             ))}
+                                            {selectedLessonProgress?.quiz?.passed && (
+                                                <Badge mt={2} colorScheme="green">
+                                                    Quiz passed
+                                                </Badge>
+                                            )}
+                                        </Box>
+                                    )}
+                                    {selectedLesson.assignments?.length > 0 && (
+                                        <Box>
+                                            <Text fontWeight="semibold" color={textColor} mb={2}>
+                                                Assignment
+                                            </Text>
+                                            <AssignmentSubmissionPanel
+                                                lessonId={selectedLessonId}
+                                                onSubmitted={() => {
+                                                    refetchProgress();
+                                                }}
+                                            />
+                                        </Box>
+                                    )}
+                                    {isSpeakingLesson(selectedLesson, resources) && (
+                                        <Box>
+                                            <Text fontWeight="semibold" color={textColor} mb={2}>
+                                                Speaking Practice
+                                            </Text>
+                                            <SpeakingPracticePanel lessonId={selectedLessonId} />
                                         </Box>
                                     )}
                                     <Box>
@@ -340,9 +469,7 @@ const StudentCourseLearn = () => {
                 quizId={takeQuizId}
                 quizTitle={takeQuizTitle}
                 onSubmitted={() => {
-                    if (selectedLessonId) {
-                        progressAPI.updateLessonProgress(selectedLessonId, { status: "completed" }).then(() => refetchProgress()).catch(() => {});
-                    }
+                    refetchProgress();
                 }}
             />
         </Box>

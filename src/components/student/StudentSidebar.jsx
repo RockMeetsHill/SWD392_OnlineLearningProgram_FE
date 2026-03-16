@@ -25,7 +25,7 @@ const Sidebar = () => {
 
   // Force refresh khi về Home
   const handleGoHome = () => {
-    window.location.href = "/";
+    globalThis.location.href = "/";
   };
 
   const menuItems = [
@@ -52,6 +52,18 @@ const Sidebar = () => {
         </Icon>
       ),
       path: "/student/courses",
+    },
+    {
+      name: "Certificates",
+      icon: (
+        <Icon viewBox="0 0 24 24" boxSize={5}>
+          <path
+            fill="currentColor"
+            d="M4 3H14A2 2 0 0 1 16 5V9H20V19A2 2 0 0 1 18 21H8A2 2 0 0 1 6 19V15H4A2 2 0 0 1 2 13V5A2 2 0 0 1 4 3M8 15V19H18V11H16V13A2 2 0 0 1 14 15H8M11 7A3 3 0 0 0 8 10A3 3 0 0 0 11 13A3 3 0 0 0 14 10A3 3 0 0 0 11 7M11 9A1 1 0 0 1 12 10A1 1 0 0 1 11 11A1 1 0 0 1 10 10A1 1 0 0 1 11 9Z"
+          />
+        </Icon>
+      ),
+      path: "/student/certificates",
     },
   ];
 

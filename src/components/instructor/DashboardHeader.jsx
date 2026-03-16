@@ -1,21 +1,26 @@
 import {
     Box,
+    Alert,
+    AlertDescription,
+    AlertIcon,
     Flex,
     Heading,
     Select,
     Button,
     HStack,
     useColorModeValue,
-    Badge,
     IconButton,
     Menu,
     MenuButton,
     MenuList,
     MenuItem,
     MenuDivider,
+    Text,
 } from "@chakra-ui/react";
 import { AddIcon, EditIcon, DeleteIcon, HamburgerIcon } from "@chakra-ui/icons";
+import PropTypes from "prop-types";
 import { PRIMARY_COLOR } from "../../constants/instructor";
+import CourseStatusBadge from "../CourseStatusBadge";
 
 const DashboardHeader = ({
     selectedCourse,
@@ -37,24 +42,15 @@ const DashboardHeader = ({
     const textColor = useColorModeValue("gray.800", "white");
     const borderColor = useColorModeValue("gray.200", "gray.700");
 
-    const getStatusBadge = (status) => {
-        const statusConfig = {
-            in_progress: { colorScheme: "gray", label: "Đang soạn" },
-            published: { colorScheme: "green", label: "Đã xuất bản" },
-            archived: { colorScheme: "orange", label: "Lưu trữ" },
-        };
-        const config = statusConfig[status] || { colorScheme: "gray", label: status };
-        return <Badge colorScheme={config.colorScheme}>{config.label}</Badge>;
-    };
-
     const handleCourseSelect = (e) => {
-        const courseId = parseInt(e.target.value, 10);
+        const courseId = Number.parseInt(e.target.value, 10);
         const course = courses.find((c) => c.courseId === courseId);
         onCourseChange(course || null);
     };
 
     // Chỉ cho xóa khi course đang soạn (chưa xuất bản)
-    const canDelete = selectedCourse && selectedCourse.status === "in_progress";
+    const canDelete = selectedCourse?.status === "in_progress";
+    const isSelectedCourseFlagged = !!selectedCourse?.contentFlagged;
 
     return (
         <Box
@@ -71,7 +67,7 @@ const DashboardHeader = ({
                 {/* Left side - Course selection */}
                 <HStack spacing={4} flex={1} minW="300px">
                     <Heading size="md" color={textColor} whiteSpace="nowrap">
-                        Khóa học:
+                        Course
                     </Heading>
 
                     <Select
@@ -83,13 +79,15 @@ const DashboardHeader = ({
                         {courses.map((course) => (
                             <option key={course.courseId} value={course.courseId}>
                                 {course.title}
+                                {course.contentFlagged ? " [Bị đánh cờ]" : ""}
                             </option>
                         ))}
                     </Select>
 
                     {selectedCourse && (
                         <>
-                            {getStatusBadge(selectedCourse.status)}
+                            <CourseStatusBadge status={selectedCourse.status} />
+                            {isSelectedCourseFlagged && <CourseStatusBadge status="flagged" />}
 
                             {/* Menu actions cho course */}
                             <Menu>
@@ -105,7 +103,7 @@ const DashboardHeader = ({
                                         icon={<EditIcon />}
                                         onClick={() => onEditCourse?.(selectedCourse)}
                                     >
-                                        Chỉnh sửa
+                                        Edit
                                     </MenuItem>
                                     <MenuDivider />
                                     <MenuItem
@@ -114,7 +112,7 @@ const DashboardHeader = ({
                                         onClick={() => onDeleteCourse?.(selectedCourse)}
                                         isDisabled={!canDelete}
                                     >
-                                        Xóa khóa học
+                                        Delete Course
                                         {!canDelete && " (Chỉ xóa được khi đang soạn)"}
                                     </MenuItem>
                                 </MenuList>
@@ -132,22 +130,23 @@ const DashboardHeader = ({
                         maxW="150px"
                         size="sm"
                     >
-                        <option value="">Tất cả</option>
-                        <option value="in_progress">Đang soạn</option>
-                        <option value="published">Đã xuất bản</option>
-                        <option value="archived">Lưu trữ</option>
+                        <option value="">All</option>
+                        <option value="in_progress">In Progress</option>
+                        <option value="published">Published</option>
+                        <option value="archived">Archived</option>
                     </Select>
 
-                    {/* Chỉ xuất bản khi đang soạn */}
+                    {/* Only publish when in progress */}
                     {selectedCourse?.status === "in_progress" && (
                         <Button
                             colorScheme="blue"
                             size="sm"
                             onClick={() => onPublish?.(selectedCourse.courseId)}
                             isLoading={publishing}
-                            loadingText="Đang xuất bản..."
+                            loadingText="Publishing..."
+                            isDisabled={isSelectedCourseFlagged}
                         >
-                            Xuất bản
+                            Publish
                         </Button>
                     )}
 
@@ -160,12 +159,57 @@ const DashboardHeader = ({
                         onClick={onOpenCreateModal}
                         _hover={{ opacity: 0.8 }}
                     >
-                        Tạo khóa học
+                        Create course
                     </Button>
                 </HStack>
             </Flex>
+
+            {isSelectedCourseFlagged && (
+                <Alert mt={4} status="error" rounded="md" alignItems="flex-start">
+                    <AlertIcon mt={1} />
+                    <AlertDescription>
+                        <Text fontWeight="semibold" mb={1}>
+
+                            73
+                            This course has been taken down by the admin and is now hidden from the public list.
+                        </Text>
+                        <Text fontSize="sm">
+                            {selectedCourse.contentFlaggedReason ||
+                                "Chưa có lý do cụ thể. Vui lòng kiểm tra lại nội dung khóa học trước khi tiếp tục."}
+                        </Text>
+                    </AlertDescription>
+                </Alert>
+            )}
         </Box>
     );
+};
+
+DashboardHeader.propTypes = {
+    selectedCourse: PropTypes.shape({
+        courseId: PropTypes.number,
+        status: PropTypes.string,
+        contentFlagged: PropTypes.bool,
+        contentFlaggedReason: PropTypes.string,
+    }),
+    courses: PropTypes.arrayOf(
+        PropTypes.shape({
+            courseId: PropTypes.number.isRequired,
+            title: PropTypes.string.isRequired,
+            contentFlagged: PropTypes.bool,
+        })
+    ).isRequired,
+    statusFilter: PropTypes.string.isRequired,
+    onCourseChange: PropTypes.func.isRequired,
+    onStatusFilterChange: PropTypes.func.isRequired,
+    onSubmitForReview: PropTypes.func,
+    onPublish: PropTypes.func,
+    onReviseCourse: PropTypes.func,
+    onOpenCreateModal: PropTypes.func.isRequired,
+    onEditCourse: PropTypes.func,
+    onDeleteCourse: PropTypes.func,
+    submitting: PropTypes.bool,
+    publishing: PropTypes.bool,
+    revising: PropTypes.bool,
 };
 
 export default DashboardHeader;

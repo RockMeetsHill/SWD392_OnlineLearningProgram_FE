@@ -1,4 +1,6 @@
 import { useState } from "react";
+import PropTypes from "prop-types";
+import { useNavigate } from "react-router-dom";
 import {
     Box,
     Flex,
@@ -13,6 +15,11 @@ import {
 import ModuleCard from "./ModuleCard";
 import AddLessonModal from "./AddLessonModal";
 import AddModuleModal from "./AddModuleModal";
+import EditModuleModal from "./EditModuleModal";
+import DeleteModuleModal from "./DeleteModuleModal";
+import LessonSettingsModal from "./LessonSettingsModal";
+import EditLessonModal from "./EditLessonModal";
+import DeleteLessonModal from "./DeleteLessonModal";
 import LessonResourcesModal from "./LessonResourcesModal";
 import CreateQuizModal from "./CreateQuizModal";
 import UploadLessonVideoModal from "./UploadLessonVideoModal";
@@ -20,6 +27,7 @@ import { AddCircleIcon } from "./Icons";
 import { PRIMARY_COLOR } from "../../constants/instructor";
 
 const DashboardContent = ({ courseId, modules, loading, onToggleModule, onRefetch }) => {
+    const navigate = useNavigate();
     const textColor = useColorModeValue("gray.900", "white");
     const mutedColor = useColorModeValue("gray.500", "gray.400");
     const statBg = useColorModeValue("white", "rgba(30, 41, 59, 0.5)");
@@ -39,6 +47,11 @@ const DashboardContent = ({ courseId, modules, loading, onToggleModule, onRefetc
     const [resourceModalLesson, setResourceModalLesson] = useState(null);
     const [quizModalLesson, setQuizModalLesson] = useState(null);
     const [uploadVideoLesson, setUploadVideoLesson] = useState(null);
+    const [editModuleModal, setEditModuleModal] = useState(null);
+    const [deleteModuleModal, setDeleteModuleModal] = useState(null);
+    const [settingsLesson, setSettingsLesson] = useState(null);
+    const [editLessonModal, setEditLessonModal] = useState(null);
+    const [deleteLessonModal, setDeleteLessonModal] = useState(null);
 
     const handleAddLessonClick = (moduleId, moduleTitle) => {
         setAddLessonModuleId(moduleId);
@@ -125,9 +138,13 @@ const DashboardContent = ({ courseId, modules, loading, onToggleModule, onRefetc
                             module={module}
                             onToggle={onToggleModule}
                             onAddLesson={handleAddLessonClick}
+                            onEditModule={(mod) => setEditModuleModal(mod)}
+                            onDeleteModule={(mod) => setDeleteModuleModal(mod)}
+                            onLessonSettings={(lesson) => setSettingsLesson(lesson)}
                             onOpenResources={setResourceModalLesson}
                             onOpenQuiz={setQuizModalLesson}
                             onUploadVideo={setUploadVideoLesson}
+                            onOpenAssignment={(lesson) => navigate(`/instructor/assignments/${lesson.lessonId || lesson.id}`)}
                         />
                     ))}
                 </VStack>
@@ -165,13 +182,51 @@ const DashboardContent = ({ courseId, modules, loading, onToggleModule, onRefetc
                 onClose={() => setUploadVideoLesson(null)}
                 lessonId={uploadVideoLesson?.lessonId ?? uploadVideoLesson?.id}
                 lessonTitle={uploadVideoLesson?.title}
-                existingVideoUrl={uploadVideoLesson?.mediaUrl ||
-                    uploadVideoLesson?.lessonResources?.find(r => r.fileType === "video")?.fileUrl}
-                videoResourceId={uploadVideoLesson?.lessonResources?.find(r => r.fileType === "video")?.resourceId}
                 onSuccess={onRefetch}
+            />
+            <EditModuleModal
+                isOpen={!!editModuleModal}
+                onClose={() => setEditModuleModal(null)}
+                courseId={courseId}
+                module={editModuleModal}
+                onSuccess={onRefetch}
+            />
+            <DeleteModuleModal
+                isOpen={!!deleteModuleModal}
+                onClose={() => setDeleteModuleModal(null)}
+                courseId={courseId}
+                module={deleteModuleModal}
+                onSuccess={onRefetch}
+            />
+            <LessonSettingsModal
+                isOpen={!!settingsLesson}
+                onClose={() => setSettingsLesson(null)}
+                lesson={settingsLesson}
+                onEdit={(l) => { setSettingsLesson(null); setEditLessonModal(l); }}
+                onDelete={(l) => { setSettingsLesson(null); setDeleteLessonModal(l); }}
+            />
+            <EditLessonModal
+                isOpen={!!editLessonModal}
+                onClose={() => setEditLessonModal(null)}
+                lesson={editLessonModal}
+                onLessonUpdated={() => { setEditLessonModal(null); onRefetch?.(); }}
+            />
+            <DeleteLessonModal
+                isOpen={!!deleteLessonModal}
+                onClose={() => setDeleteLessonModal(null)}
+                lesson={deleteLessonModal}
+                onLessonDeleted={() => { setDeleteLessonModal(null); onRefetch?.(); }}
             />
         </>
     );
+};
+
+DashboardContent.propTypes = {
+    courseId: PropTypes.number,
+    modules: PropTypes.arrayOf(PropTypes.object),
+    loading: PropTypes.bool,
+    onToggleModule: PropTypes.func,
+    onRefetch: PropTypes.func,
 };
 
 export default DashboardContent;

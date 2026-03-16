@@ -138,17 +138,17 @@ const EditLessonModal = ({ isOpen, onClose, lesson, onLessonUpdated }) => {
         <Modal isOpen={isOpen} onClose={handleClose} size="lg" isCentered>
             <ModalOverlay />
             <ModalContent>
-                <ModalHeader>Chỉnh sửa bài học</ModalHeader>
+                <ModalHeader>Edit Lesson</ModalHeader>
                 <ModalCloseButton />
                 <ModalBody>
                     <VStack spacing={4}>
                         <FormControl isRequired isInvalid={!!errors.title}>
-                            <FormLabel>Tên bài học</FormLabel>
+                            <FormLabel>Lesson Name</FormLabel>
                             <Input
                                 name="title"
                                 value={formData.title}
                                 onChange={handleChange}
-                                placeholder="Nhập tên bài học"
+                                placeholder="Enter lesson name"
                             />
                             {errors.title && (
                                 <FormErrorMessage>{errors.title}</FormErrorMessage>
@@ -156,12 +156,12 @@ const EditLessonModal = ({ isOpen, onClose, lesson, onLessonUpdated }) => {
                         </FormControl>
 
                         <FormControl>
-                            <FormLabel>Nội dung</FormLabel>
+                            <FormLabel>Content</FormLabel>
                             <Textarea
                                 name="content"
                                 value={formData.content}
                                 onChange={handleChange}
-                                placeholder="Nhập nội dung bài học"
+                                placeholder="Enter lesson content"
                                 rows={5}
                                 resize="vertical"
                             />
@@ -200,7 +200,7 @@ const EditLessonModal = ({ isOpen, onClose, lesson, onLessonUpdated }) => {
                         loadingText="Đang lưu..."
                         _hover={{ opacity: 0.8 }}
                     >
-                        Lưu thay đổi
+                        Save Changes
                     </Button>
                 </ModalFooter>
             </ModalContent>

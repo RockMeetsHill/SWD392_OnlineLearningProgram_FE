@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect } from "react";
+import PropTypes from "prop-types";
 import { signInWithPopup } from "firebase/auth";
 import { auth, googleProvider } from "../config/firebase";
 
@@ -23,6 +24,40 @@ function AuthProvider({ children }) {
 
     const [isLoading, setIsLoading] = useState(true);
 
+    const refreshUser = async (overrideToken = token) => {
+        if (!overrideToken) {
+            setUser(null);
+            localStorage.removeItem("user");
+            return null;
+        }
+
+        const response = await fetch(`${API_URL}/auth/me`, {
+            method: "GET",
+            headers: {
+                Authorization: `Bearer ${overrideToken}`,
+            },
+            credentials: "include",
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            const userData = data.user || data;
+            setUser(userData);
+            localStorage.setItem("user", JSON.stringify(userData));
+            return userData;
+        }
+
+        if (response.status === 401) {
+            setUser(null);
+            setToken(null);
+            localStorage.removeItem("user");
+            localStorage.removeItem("token");
+            return null;
+        }
+
+        throw new Error("Failed to refresh user");
+    };
+
     // Verify token on mount
     useEffect(() => {
         let isMounted = true;
@@ -30,27 +65,8 @@ function AuthProvider({ children }) {
         const verifyAuth = async () => {
             if (token) {
                 try {
-                    const response = await fetch(`${API_URL}/auth/me`, {
-                        method: "GET",
-                        headers: {
-                            Authorization: `Bearer ${token}`,
-                        },
-                        credentials: "include",
-                    });
-
                     if (!isMounted) return;
-
-                    if (response.ok) {
-                        const data = await response.json();
-                        const userData = data.user || data;
-                        setUser(userData);
-                        localStorage.setItem("user", JSON.stringify(userData));
-                    } else if (response.status === 401) {
-                        setUser(null);
-                        setToken(null);
-                        localStorage.removeItem("user");
-                        localStorage.removeItem("token");
-                    }
+                    await refreshUser(token);
                 } catch (error) {
                     console.error("Auth verification error:", error);
                 }
@@ -87,8 +103,8 @@ function AuthProvider({ children }) {
             }
         };
 
-        window.addEventListener("storage", handleStorageChange);
-        return () => window.removeEventListener("storage", handleStorageChange);
+        globalThis.addEventListener("storage", handleStorageChange);
+        return () => globalThis.removeEventListener("storage", handleStorageChange);
     }, []);
 
     // Login function
@@ -112,6 +128,7 @@ function AuthProvider({ children }) {
         setToken(data.token);
         localStorage.setItem("user", JSON.stringify(data.user));
         localStorage.setItem("token", data.token);
+        await refreshUser(data.token);
 
         return data;
     };
@@ -140,6 +157,7 @@ function AuthProvider({ children }) {
         setToken(data.token);
         localStorage.setItem("user", JSON.stringify(data.user));
         localStorage.setItem("token", data.token);
+        await refreshUser(data.token);
 
         return data;
     };
@@ -202,6 +220,7 @@ function AuthProvider({ children }) {
         register,
         logout,
         hasRole,
+        refreshUser,
     };
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
@@ -214,5 +233,9 @@ function useAuth() {
     }
     return context;
 }
+
+AuthProvider.propTypes = {
+    children: PropTypes.node,
+};
 
 export { AuthContext, AuthProvider, useAuth };

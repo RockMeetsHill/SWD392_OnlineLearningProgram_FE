@@ -10,6 +10,7 @@ import {
     Divider,
     useColorModeValue,
 } from "@chakra-ui/react";
+import PropTypes from "prop-types";
 import {
     DragIcon,
     ExpandMoreIcon,
@@ -26,7 +27,18 @@ import {
 } from "./Icons";
 import { PRIMARY_COLOR } from "../../constants/instructor";
 
-const ModuleCard = ({ module, onToggle, onAddLesson, onOpenResources, onOpenQuiz, onUploadVideo }) => {
+const ModuleCard = ({
+    module,
+    onToggle,
+    onAddLesson,
+    onEditModule,
+    onDeleteModule,
+    onLessonSettings,
+    onOpenResources,
+    onOpenQuiz,
+    onUploadVideo,
+    onOpenAssignment,
+}) => {
     const cardBg = useColorModeValue("white", "rgba(30, 41, 59, 0.4)");
     const headerBg = useColorModeValue("gray.50", "rgba(30, 41, 59, 0.2)");
     const borderColor = useColorModeValue("gray.200", "gray.700");
@@ -38,7 +50,6 @@ const ModuleCard = ({ module, onToggle, onAddLesson, onOpenResources, onOpenQuiz
     const lessons = module.lessons || [];
     const lessonsCount = module._count?.lessons || lessons.length || 0;
     const isExpanded = module.isExpanded !== false;
-
 
     const lessonHasVideo = (lesson) =>
         lesson.mediaUrl ||
@@ -92,6 +103,10 @@ const ModuleCard = ({ module, onToggle, onAddLesson, onOpenResources, onOpenQuiz
                         color="gray.400"
                         _hover={{ color: textColor, bg: useColorModeValue("gray.100", "gray.700") }}
                         aria-label="Edit module"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onEditModule?.(module);
+                        }}
                     />
                     <IconButton
                         icon={<DeleteIcon boxSize={5} />}
@@ -100,6 +115,10 @@ const ModuleCard = ({ module, onToggle, onAddLesson, onOpenResources, onOpenQuiz
                         color="gray.400"
                         _hover={{ color: "red.500", bg: "red.50" }}
                         aria-label="Delete module"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onDeleteModule?.(module);
+                        }}
                     />
                 </HStack>
             </Flex>
@@ -107,131 +126,128 @@ const ModuleCard = ({ module, onToggle, onAddLesson, onOpenResources, onOpenQuiz
             {/* Lessons */}
             <Collapse in={isExpanded}>
                 <VStack p={5} spacing={4} align="stretch">
-                    {lessons.map((lesson, idx) => {
-                        // Calculate hasDocumentResources for each lesson
-                        const hasDocumentResources = lesson?.lessonResources?.some(r => r.fileType !== "video") || false;
-
-                        return (
-                            <Flex
-                                key={lesson.lessonId || lesson.id || idx}
-                                align="center"
-                                gap={4}
-                                p={4}
-                                bg={lessonBg}
-                                borderRadius="lg"
-                                border="1px"
-                                borderColor={lessonBorder}
-                                _hover={{ borderColor: `${PRIMARY_COLOR}50`, shadow: "sm" }}
-                                transition="all 0.2s"
-                            >
-                                <DragIcon color="gray.300" boxSize={5} cursor="grab" />
-                                <Box flex={1}>
-                                    <HStack spacing={3}>
-                                        <Text fontSize="sm" fontWeight="bold" color={PRIMARY_COLOR}>
-                                            {lesson.orderIndex || idx + 1}
-                                        </Text>
-                                        <Text fontSize="md" fontWeight="semibold" color={textColor}>
-                                            {lesson.title}
-                                        </Text>
-                                    </HStack>
-                                </Box>
-                                <HStack spacing={4}>
-                                    {lessonHasVideo(lesson) ? (
-                                        // Video Ready - bấm để xem video
-                                        <Button
-                                            size="sm"
-                                            leftIcon={<CheckCircleIcon boxSize={4} />}
-                                            bg="green.50"
-                                            color="green.600"
+                    {lessons.map((lesson, idx) => (
+                        <Flex
+                            key={lesson.lessonId || lesson.id || idx}
+                            align="center"
+                            gap={4}
+                            p={4}
+                            bg={lessonBg}
+                            borderRadius="lg"
+                            border="1px"
+                            borderColor={lessonBorder}
+                            _hover={{ borderColor: `${PRIMARY_COLOR}50`, shadow: "sm" }}
+                            transition="all 0.2s"
+                        >
+                            <DragIcon color="gray.300" boxSize={5} cursor="grab" />
+                            <Box flex={1}>
+                                <HStack spacing={3}>
+                                    <Text fontSize="sm" fontWeight="bold" color={PRIMARY_COLOR}>
+                                        {lesson.orderIndex || idx + 1}
+                                    </Text>
+                                    <Text fontSize="md" fontWeight="semibold" color={textColor}>
+                                        {lesson.title}
+                                    </Text>
+                                </HStack>
+                            </Box>
+                            <HStack spacing={4}>
+                                {lessonHasVideo(lesson) ? (
+                                    <HStack spacing={2} px={3} py={1.5} bg="green.50" borderRadius="md">
+                                        <CheckCircleIcon color="green.500" boxSize={4} />
+                                        <Text
+                                            fontSize="xs"
                                             fontWeight="bold"
-                                            _hover={{
-                                                bg: "green.100",
-                                            }}
-                                            onClick={() => onUploadVideo && onUploadVideo(lesson)}
+                                            color="green.600"
+                                            textTransform="uppercase"
                                         >
                                             Video Ready
-                                        </Button>
-                                    ) : (
-                                        // Chưa có video - hiện nút Upload Video
-                                        <Button
-                                            size="sm"
-                                            leftIcon={<VideoIcon boxSize={4} />}
-                                            bg={useColorModeValue("gray.100", "gray.800")}
-                                            color={useColorModeValue("gray.600", "gray.300")}
-                                            fontWeight="bold"
-                                            _hover={{
-                                                bg: `${PRIMARY_COLOR}20`,
-                                                color: PRIMARY_COLOR,
-                                            }}
-                                            onClick={() => onUploadVideo && onUploadVideo(lesson)}
-                                        >
-                                            Upload Video
-                                        </Button>
-                                    )}
-                                    {lesson.quizzes && lesson.quizzes.length > 0 ? (
-                                        <Button
-                                            size="sm"
-                                            leftIcon={<AssignmentIcon boxSize={4} />}
-                                            variant="outline"
-                                            colorScheme="blue"
-                                            fontWeight="bold"
-                                            onClick={() => onOpenQuiz && onOpenQuiz(lesson)}
-                                        >
-                                            {lesson.quizzes.length > 1 ? `Quizzes (${lesson.quizzes.length})` : "Quiz"}
-                                        </Button>
-                                    ) : (
-                                        <Button
-                                            size="sm"
-                                            leftIcon={<QuizIcon boxSize={4} />}
-                                            bg={useColorModeValue("gray.100", "gray.800")}
-                                            color={useColorModeValue("gray.600", "gray.300")}
-                                            fontWeight="bold"
-                                            _hover={{
-                                                bg: `${PRIMARY_COLOR}20`,
-                                                color: PRIMARY_COLOR,
-                                            }}
-                                            onClick={() => onOpenQuiz && onOpenQuiz(lesson)}
-                                        >
-                                            Add Quiz
-                                        </Button>
-                                    )}
-
+                                        </Text>
+                                    </HStack>
+                                ) : null}
+                                <Button
+                                    size="sm"
+                                    leftIcon={<VideoIcon boxSize={4} />}
+                                    bg={useColorModeValue("gray.100", "gray.800")}
+                                    color={useColorModeValue("gray.600", "gray.300")}
+                                    fontWeight="bold"
+                                    _hover={{
+                                        bg: `${PRIMARY_COLOR}20`,
+                                        color: PRIMARY_COLOR,
+                                    }}
+                                    onClick={() => onUploadVideo && onUploadVideo(lesson)}
+                                >
+                                    {lessonHasVideo(lesson) ? "Add Video" : "Upload Video"}
+                                </Button>
+                                {lesson.quizzes && lesson.quizzes.length > 0 ? (
                                     <Button
                                         size="sm"
-                                        leftIcon={<BookIcon boxSize={4} />}
-                                        bg={hasDocumentResources ? "rgba(66, 153, 225, 0.1)" : useColorModeValue("gray.100", "gray.800")}
-                                        color={hasDocumentResources ? PRIMARY_COLOR : useColorModeValue("gray.600", "gray.300")}
+                                        leftIcon={<AssignmentIcon boxSize={4} />}
+                                        variant="outline"
+                                        colorScheme="blue"
+                                        fontWeight="bold"
+                                        onClick={() => onOpenQuiz && onOpenQuiz(lesson)}
+                                    >
+                                        {lesson.quizzes.length > 1 ? `Quizzes (${lesson.quizzes.length})` : "Quiz"}
+                                    </Button>
+                                ) : (
+                                    <Button
+                                        size="sm"
+                                        leftIcon={<QuizIcon boxSize={4} />}
+                                        bg={useColorModeValue("gray.100", "gray.800")}
+                                        color={useColorModeValue("gray.600", "gray.300")}
                                         fontWeight="bold"
                                         _hover={{
-                                            bg: hasDocumentResources ? "rgba(66, 153, 225, 0.2)" : `${PRIMARY_COLOR}20`,
+                                            bg: `${PRIMARY_COLOR}20`,
                                             color: PRIMARY_COLOR,
                                         }}
-                                        onClick={() => onOpenResources && onOpenResources(lesson)}
+                                        onClick={() => onOpenQuiz && onOpenQuiz(lesson)}
                                     >
-                                        File
-                                        {hasDocumentResources && (
-                                            <Text fontSize="xs" ml={1.5} fontWeight="600">
-                                                ({lesson.lessonResources.filter(r => r.fileType !== "video").length})
-                                            </Text>
-                                        )}
+                                        Add Quiz
                                     </Button>
-                                    <Divider
-                                        orientation="vertical"
-                                        h={6}
-                                        borderColor={useColorModeValue("gray.200", "gray.700")}
-                                    />
-                                    <IconButton
-                                        icon={<SettingsIcon boxSize={5} />}
-                                        variant="ghost"
+                                )}
+                                {(lesson.assignments && lesson.assignments.length > 0) || lesson.type === "assignment" ? (
+                                    <Button
                                         size="sm"
-                                        color="gray.400"
-                                        _hover={{ color: textColor }}
-                                        aria-label="Lesson settings"
-                                    />
-                                </HStack>
-                            </Flex>
-                        )
-                    })}
+                                        leftIcon={<AssignmentIcon boxSize={4} />}
+                                        variant="outline"
+                                        colorScheme="orange"
+                                        fontWeight="bold"
+                                        onClick={() => onOpenAssignment && onOpenAssignment(lesson)}
+                                    >
+                                        Review Submissions
+                                    </Button>
+                                ) : null}
+                                <Button
+                                    size="sm"
+                                    leftIcon={<BookIcon boxSize={4} />}
+                                    bg={useColorModeValue("gray.100", "gray.800")}
+                                    color={useColorModeValue("gray.600", "gray.300")}
+                                    fontWeight="bold"
+                                    _hover={{
+                                        bg: `${PRIMARY_COLOR}20`,
+                                        color: PRIMARY_COLOR,
+                                    }}
+                                    onClick={() => onOpenResources && onOpenResources(lesson)}
+                                >
+                                    Tài liệu
+                                </Button>
+                                <Divider
+                                    orientation="vertical"
+                                    h={6}
+                                    borderColor={useColorModeValue("gray.200", "gray.700")}
+                                />
+                                <IconButton
+                                    icon={<SettingsIcon boxSize={5} />}
+                                    variant="ghost"
+                                    size="sm"
+                                    color="gray.400"
+                                    _hover={{ color: textColor }}
+                                    aria-label="Lesson settings"
+                                    onClick={() => onLessonSettings?.(lesson)}
+                                />
+                            </HStack>
+                        </Flex>
+                    ))}
 
                     {/* Add Lesson Button */}
                     <Button
@@ -259,6 +275,28 @@ const ModuleCard = ({ module, onToggle, onAddLesson, onOpenResources, onOpenQuiz
             </Collapse>
         </Box>
     );
+};
+
+ModuleCard.propTypes = {
+    module: PropTypes.shape({
+        moduleId: PropTypes.number,
+        id: PropTypes.number,
+        title: PropTypes.string,
+        isExpanded: PropTypes.bool,
+        _count: PropTypes.shape({
+            lessons: PropTypes.number,
+        }),
+        lessons: PropTypes.arrayOf(PropTypes.object),
+    }),
+    onToggle: PropTypes.func,
+    onAddLesson: PropTypes.func,
+    onEditModule: PropTypes.func,
+    onDeleteModule: PropTypes.func,
+    onLessonSettings: PropTypes.func,
+    onOpenResources: PropTypes.func,
+    onOpenQuiz: PropTypes.func,
+    onUploadVideo: PropTypes.func,
+    onOpenAssignment: PropTypes.func,
 };
 
 export default ModuleCard;

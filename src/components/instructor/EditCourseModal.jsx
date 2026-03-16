@@ -163,17 +163,17 @@ const EditCourseModal = ({ isOpen, onClose, course, onCourseUpdated }) => {
         <Modal isOpen={isOpen} onClose={handleClose} size="lg" isCentered>
             <ModalOverlay />
             <ModalContent>
-                <ModalHeader>Chỉnh sửa khóa học</ModalHeader>
+                <ModalHeader>Edit Course</ModalHeader>
                 <ModalCloseButton />
                 <ModalBody>
                     <VStack spacing={4}>
                         <FormControl isRequired isInvalid={!!errors.title}>
-                            <FormLabel>Tên khóa học</FormLabel>
+                            <FormLabel>Course Name</FormLabel>
                             <Input
                                 name="title"
                                 value={formData.title}
                                 onChange={handleChange}
-                                placeholder="Nhập tên khóa học"
+                                placeholder="Enter course name"
                             />
                             {errors.title && (
                                 <FormErrorMessage>{errors.title}</FormErrorMessage>
@@ -181,12 +181,12 @@ const EditCourseModal = ({ isOpen, onClose, course, onCourseUpdated }) => {
                         </FormControl>
 
                         <FormControl isRequired isInvalid={!!errors.description}>
-                            <FormLabel>Mô tả</FormLabel>
+                            <FormLabel>Description</FormLabel>
                             <Textarea
                                 name="description"
                                 value={formData.description}
                                 onChange={handleChange}
-                                placeholder="Nhập mô tả khóa học"
+                                placeholder="Enter course description"
                                 rows={4}
                                 resize="vertical"
                             />
@@ -196,19 +196,19 @@ const EditCourseModal = ({ isOpen, onClose, course, onCourseUpdated }) => {
                         </FormControl>
 
                         <FormControl>
-                            <FormLabel>Giá (VND)</FormLabel>
+                            <FormLabel>Price (VND)</FormLabel>
                             <Input
                                 name="price"
                                 type="number"
                                 min={0}
                                 value={formData.price}
                                 onChange={handleChange}
-                                placeholder="0 để miễn phí"
+                                placeholder="0 for free"
                             />
                         </FormControl>
 
                         <FormControl>
-                            <FormLabel>Danh mục</FormLabel>
+                            <FormLabel>Category</FormLabel>
                             <Select
                                 name="category"
                                 value={formData.category}
@@ -223,7 +223,7 @@ const EditCourseModal = ({ isOpen, onClose, course, onCourseUpdated }) => {
                         </FormControl>
 
                         <FormControl>
-                            <FormLabel>Mức độ</FormLabel>
+                            <FormLabel>Level</FormLabel>
                             <Select
                                 name="levelTarget"
                                 value={formData.levelTarget}
@@ -238,7 +238,7 @@ const EditCourseModal = ({ isOpen, onClose, course, onCourseUpdated }) => {
                         </FormControl>
 
                         <FormControl>
-                            <FormLabel>Ảnh bìa</FormLabel>
+                            <FormLabel>Thumbnail</FormLabel>
                             {(course?.thumbnailUrl || thumbnailPreview) && (
                                 <Box mb={2}>
                                     <Image
@@ -261,17 +261,17 @@ const EditCourseModal = ({ isOpen, onClose, course, onCourseUpdated }) => {
 
                 <ModalFooter>
                     <Button variant="ghost" mr={3} onClick={handleClose}>
-                        Hủy
+                        Cancel
                     </Button>
                     <Button
                         bg={PRIMARY_COLOR}
                         color="#0A1926"
                         onClick={handleSubmit}
                         isLoading={loading}
-                        loadingText="Đang lưu..."
+                        loadingText="Saving..."
                         _hover={{ opacity: 0.8 }}
                     >
-                        Lưu thay đổi
+                        Save Changes
                     </Button>
                 </ModalFooter>
             </ModalContent>
