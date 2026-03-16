@@ -577,7 +577,7 @@ const Dashboard = () => {
                                 </Box>
 
                                 {/* Recent Accomplishments */}
-                                <Box>
+                                {/* <Box>
                                     <Flex justify="space-between" align="center" mb={4}>
                                         <HStack spacing={2}>
                                             <Icon viewBox="0 0 24 24" boxSize={5} color="primary.500">
@@ -638,7 +638,7 @@ const Dashboard = () => {
                                             </Card>
                                         ))}
                                     </Grid>
-                                </Box>
+                                </Box> */}
                             </VStack>
                         </GridItem>
 
