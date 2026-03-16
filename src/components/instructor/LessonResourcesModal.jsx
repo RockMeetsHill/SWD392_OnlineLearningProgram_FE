@@ -21,6 +21,7 @@ import {
     Box,
 } from "@chakra-ui/react";
 import { lessonResourceAPI } from "../../services/lessonResourceService";
+import { videoAPI } from "../../services/videoService";
 import { DeleteIcon, CloudUploadIcon, BookIcon } from "./Icons";
 import { PRIMARY_COLOR } from "../../constants/instructor";
 
@@ -78,9 +79,15 @@ const LessonResourcesModal = ({ isOpen, onClose, lessonId, lessonTitle, onSucces
         }
     };
 
-    const handleDelete = async (resourceId) => {
+    const handleDelete = async (resource) => {
+        const resourceId = resource.resourceId ?? resource;
+        const isVideo = typeof resource === "object" && resource?.fileType === "video";
         try {
-            await lessonResourceAPI.delete(resourceId);
+            if (isVideo) {
+                await videoAPI.deleteVideo(resourceId);
+            } else {
+                await lessonResourceAPI.delete(resourceId);
+            }
             setResources((prev) => prev.filter((r) => r.resourceId !== resourceId));
             toast({ title: "Đã xóa tài liệu", status: "success", duration: 3000 });
             if (onSuccess) onSuccess();
@@ -161,40 +168,38 @@ const LessonResourcesModal = ({ isOpen, onClose, lessonId, lessonTitle, onSucces
                             </Text>
                         ) : (
                             <VStack align="stretch" spacing={2}>
-                                {resources
-                                    .filter((r) => r.fileType !== "video")
-                                    .map((r) => (
-                                        <HStack
-                                            key={r.resourceId}
-                                            justify="space-between"
-                                            p={2}
-                                            borderRadius="md"
-                                            bg={useColorModeValue("white", "gray.700")}
-                                            border="1px"
-                                            borderColor={useColorModeValue("gray.200", "gray.600")}
-                                        >
-                                            <HStack spacing={2} flex={1} minW={0}>
-                                                <BookIcon boxSize={4} color={PRIMARY_COLOR} />
-                                                <Link
-                                                    href={r.fileUrl.startsWith("http") ? r.fileUrl : `${API_BASE}${r.fileUrl}`}
-                                                    isExternal
-                                                    fontSize="sm"
-                                                    color={PRIMARY_COLOR}
-                                                    noOfLines={1}
-                                                >
-                                                    {r.title || "Tài liệu"}
-                                                </Link>
-                                            </HStack>
-                                            <IconButton
-                                                aria-label="Xóa"
-                                                icon={<DeleteIcon boxSize={4} />}
-                                                size="sm"
-                                                variant="ghost"
-                                                colorScheme="red"
-                                                onClick={() => handleDelete(r.resourceId)}
-                                            />
+                                {resources.map((r) => (
+                                    <HStack
+                                        key={r.resourceId}
+                                        justify="space-between"
+                                        p={2}
+                                        borderRadius="md"
+                                        bg={useColorModeValue("white", "gray.700")}
+                                        border="1px"
+                                        borderColor={useColorModeValue("gray.200", "gray.600")}
+                                    >
+                                        <HStack spacing={2} flex={1} minW={0}>
+                                            <BookIcon boxSize={4} color={PRIMARY_COLOR} />
+                                            <Link
+                                                href={r.fileUrl.startsWith("http") ? r.fileUrl : `${API_BASE}${r.fileUrl}`}
+                                                isExternal
+                                                fontSize="sm"
+                                                color={PRIMARY_COLOR}
+                                                noOfLines={1}
+                                            >
+                                                {r.title || "Tài liệu"}
+                                            </Link>
                                         </HStack>
-                                    ))}
+                                        <IconButton
+                                            aria-label="Xóa"
+                                            icon={<DeleteIcon boxSize={4} />}
+                                            size="sm"
+                                            variant="ghost"
+                                            colorScheme="red"
+                                            onClick={() => handleDelete(r)}
+                                        />
+                                    </HStack>
+                                ))}
                             </VStack>
                         )}
                     </VStack>

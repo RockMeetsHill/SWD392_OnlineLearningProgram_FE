@@ -497,7 +497,7 @@ const CourseSearch = () => {
 
   const [searchQuery, setSearchQuery] = useState(searchParams.get("q") || "");
   const [filters, setFilters] = useState({
-    levels: searchParams.getAll("level") || [],
+    levels: [],
     price: [],
   });
   const [currentPage, setCurrentPage] = useState(1);
@@ -509,7 +509,7 @@ const CourseSearch = () => {
 
   const textColor = useColorModeValue("gray.900", "white");
   const inputBg = useColorModeValue("white", "gray.800");
-  // const borderColor = useColorModeValue("gray.200", "gray.700");
+  const borderColor = useColorModeValue("gray.200", "gray.700");
 
   // Fetch courses from API
   const fetchCourses = useCallback(async () => {
@@ -622,12 +622,7 @@ const CourseSearch = () => {
     if (queryParam) {
       setSearchQuery(queryParam);
     }
-
-    const levelParams = searchParams.getAll("level");
-    if (levelParams.length > 0) {
-      setFilters((prev) => ({ ...prev, levels: levelParams }));
-    }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   const clearSearch = () => {
     setSearchQuery(""); // Khi xóa, searchQuery = "" sẽ trigger useEffect và tự động fetch lại
@@ -645,7 +640,7 @@ const CourseSearch = () => {
 
   const handleAddToCart = (course) => {
     if (!user) {
-      console.log("[CourseSearch] User not logged in");
+      console.log('[CourseSearch] User not logged in');
       toast({
         title: "Login Required",
         description: "Please login to add courses to your cart.",
@@ -665,11 +660,11 @@ const CourseSearch = () => {
 
       // Check if course already in cart
       const courseExists = cartItems.some(
-        (item) => item.courseId === course.courseId,
+        (item) => item.courseId === course.courseId
       );
 
       if (courseExists) {
-        console.log("[CourseSearch] Course already in cart:", course.courseId);
+        console.log('[CourseSearch] Course already in cart:', course.courseId);
         toast({
           title: "Already in Cart",
           description: "This course is already in your cart!",
@@ -694,14 +689,11 @@ const CourseSearch = () => {
 
       // Add new item to cart
       cartItems.push(cartItem);
-      console.log("[CourseSearch] Added course to cart:", cartItem);
+      console.log('[CourseSearch] Added course to cart:', cartItem);
 
       // Save to localStorage
       localStorage.setItem("cartItems", JSON.stringify(cartItems));
-      console.log(
-        "[CourseSearch] Cart updated, total items:",
-        cartItems.length,
-      );
+      console.log('[CourseSearch] Cart updated, total items:', cartItems.length);
 
       toast({
         title: "Success",
@@ -711,7 +703,7 @@ const CourseSearch = () => {
         isClosable: true,
         position: "top-right",
       });
-      console.log("[CourseSearch] Showing success notification");
+      console.log('[CourseSearch] Showing success notification');
     } catch (err) {
       console.error("Error adding to cart:", err);
       toast({

@@ -183,4 +183,19 @@ export const courseAPI = {
       body: JSON.stringify(payload),
     });
   },
+
+  // Update module (instructor)
+  updateModule: async (courseId, moduleId, payload) => {
+    return fetchWithAuth(`${API_URL}/courses/${courseId}/modules/${moduleId}`, {
+      method: "PUT",
+      body: JSON.stringify(payload),
+    });
+  },
+
+  // Delete module (instructor)
+  deleteModule: async (courseId, moduleId) => {
+    return fetchWithAuth(`${API_URL}/courses/${courseId}/modules/${moduleId}`, {
+      method: "DELETE",
+    });
+  },
 };
