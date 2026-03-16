@@ -204,7 +204,7 @@ const Navbar = () => {
                     <HStack spacing={3} display={{ base: "none", md: "flex" }} zIndex={20}>
                         {isAuthenticated ? (
                             <>
-                                {/* Cart Icon */}
+                                {/* Cart Icon
                                 <Box position="relative">
                                     <IconButton
                                         icon={<CartIcon boxSize={5} />}
@@ -229,10 +229,10 @@ const Navbar = () => {
                                             {cartItemsCount}
                                         </Badge>
                                     )}
-                                </Box>
+                                </Box> */}
 
                                 {/* Notifications */}
-                                <Popover placement="bottom-end">
+                                {/* <Popover placement="bottom-end">
                                     <PopoverTrigger>
                                         <Box position="relative">
                                             <IconButton
@@ -300,7 +300,7 @@ const Navbar = () => {
                                             )}
                                         </PopoverBody>
                                     </PopoverContent>
-                                </Popover>
+                                </Popover> */}
 
                                 {/* User Menu */}
                                 <Menu>

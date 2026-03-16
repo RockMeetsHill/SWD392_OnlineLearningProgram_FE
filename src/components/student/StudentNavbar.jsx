@@ -142,7 +142,7 @@ const StudentNavbar = () => {
                 {/* User Actions */}
                 <HStack spacing={2} flexShrink={0}>
                     {/* Notifications */}
-                    <Popover placement="bottom-end">
+                    {/* <Popover placement="bottom-end">
                         <PopoverTrigger>
                             <Box position="relative">
                                 <IconButton
@@ -210,7 +210,7 @@ const StudentNavbar = () => {
                                 )}
                             </PopoverBody>
                         </PopoverContent>
-                    </Popover>
+                    </Popover> */}
 
                     {/* User Menu */}
                     <Menu>
