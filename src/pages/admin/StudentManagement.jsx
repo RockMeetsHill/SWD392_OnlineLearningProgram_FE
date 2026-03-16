@@ -461,7 +461,7 @@ const StudentManagement = () => {
                                   isDisabled={togglingStatus === student.id}
                                   onChange={() => handleToggleStatus(student)}
                                 />
-                                <IconButton
+                                {/* <IconButton
                                   aria-label="Delete student"
                                   icon={<DeleteIcon />}
                                   size="sm"
@@ -472,7 +472,7 @@ const StudentManagement = () => {
                                     bg: "red.50",
                                   }}
                                   onClick={() => handleDeleteClick(student)}
-                                />
+                                /> */}
                               </HStack>
                             </Td>
                           </Tr>

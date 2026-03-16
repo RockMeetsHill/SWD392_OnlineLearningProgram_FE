@@ -144,8 +144,8 @@ const AdminNavbar = () => {
                   </Badge>
                 )}
               </Box>
-            </PopoverTrigger>
-            <PopoverContent bg={menuBg} w="300px">
+            </PopoverTrigger> */}
+            {/* <PopoverContent bg={menuBg} w="300px">
               <PopoverArrow bg={menuBg} />
               <PopoverHeader fontWeight="bold" borderBottomWidth="1px">
                 Notifications
@@ -229,12 +229,12 @@ const AdminNavbar = () => {
               >
                 Dashboard
               </MenuItem>
-              <MenuItem
+              {/* <MenuItem
                 icon={<UserIcon boxSize={4} />}
                 onClick={() => navigate("/admin/profile")}
               >
                 My Profile
-              </MenuItem>
+              </MenuItem> */}
               {/* <MenuItem
                 icon={<SettingsIcon boxSize={4} />}
                 onClick={() => navigate("/admin/settings")}

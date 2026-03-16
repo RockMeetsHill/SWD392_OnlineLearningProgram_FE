@@ -141,8 +141,8 @@ const LearningNavbar = () => {
                                     </Badge>
                                 )}
                             </Box>
-                        </PopoverTrigger>
-                        <PopoverContent bg={menuBg} w="300px">
+                        </PopoverTrigger> */}
+                        {/* <PopoverContent bg={menuBg} w="300px">
                             <PopoverArrow bg={menuBg} />
                             <PopoverHeader fontWeight="bold" borderBottomWidth="1px">
                                 Notifications
@@ -226,7 +226,7 @@ const LearningNavbar = () => {
                             >
                                 Dashboard
                             </MenuItem>
-                            <MenuItem
+                            {/* <MenuItem
                                 icon={<UserIcon boxSize={4} />}
                                 onClick={() => navigate("/profile")}
                             >
@@ -237,7 +237,7 @@ const LearningNavbar = () => {
                                 onClick={() => navigate("/settings")}
                             >
                                 Settings
-                            </MenuItem>
+                            </MenuItem> */}
                             <MenuDivider />
                             <MenuItem
                                 icon={<LogoutIcon boxSize={4} />}
